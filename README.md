@@ -162,7 +162,21 @@ de faisabilité du 01/08).
    d'incohérence, statut forcé à `suspect` quels que soient CA/effectif — des chiffres
    attachés à la mauvaise entreprise ne valent rien et ne doivent jamais atterrir dans
    une liste de prospection sans review.
-5. **À venir** : détection de la déclaration d'accessibilité elle-même.
+5. **Détection de la déclaration d'accessibilité** — cherche le texte de conformité RGAA
+   sur la home, suit un lien « accessibilité » découvert dans la page (même mécanisme
+   que pour les mentions légales — nécessaire : chaque site nomme sa page différemment,
+   `/fr_fr/accessibilite-numerique` chez Caroll par exemple, absent de toute liste de
+   chemins usuels), essaie des chemins usuels, puis force un rendu navigateur en dernier
+   recours (footer de SPA injecté en JS, jamais vu par un simple `fetch()`).
+   **Deux formulations réelles constatées, une seule ne suffisait pas** : le texte
+   normalisé attendu (« Accessibilité : totalement/partiellement/non conforme ») ET une
+   formulation narrative réelle rencontrée sur caroll.com (groupe Beaumanoir) — *« le
+   site de Caroll est non conforme au Référentiel Général d'Amélioration de
+   l'Accessibilité (RGAA) »* — que la première regex, trop rigide, ratait complètement.
+   **Validé en direct sur 5 sites réels** : Caroll → non conforme (30 % des critères
+   RGAA respectés, audit Urbilog daté), Chaussea → non conforme, Castorama/Courrier
+   International/booknode.com → absente (Courrier International vérifié manuellement :
+   zéro mention « accessib* » nulle part sur le site, vrai négatif).
 
 ## Roadmap
 
@@ -187,10 +201,9 @@ de faisabilité du 01/08).
 - [x] Qualification CA/effectif/NAF (API Recherche d'entreprises, filtre régime EAA :
       >10 salariés et >2M€ CA) + garde-fou de cohérence nom/domaine (cf faux positif
       Caroll/Salesforce du 11/08)
-- [ ] Détection de la déclaration d'accessibilité (regex sur home + chemins usuels +
-      footer + CGV/mentions légales, statut DECLARATION_TROUVEE/ABSENTE/INDETERMINE) —
-      **pas encore fait : on ne sait pas encore si Caroll (ou tout autre site testé) a
-      une déclaration ou non**
+- [x] Détection de la déclaration d'accessibilité (suivi de lien découvert + chemins
+      usuels + rendu navigateur forcé, 2 formulations de conformité reconnues, validé
+      en direct sur 5 sites réels — Caroll et Chaussea non conformes, 3 sans déclaration)
 - [ ] Scan axe-core sur les prospects qualifiés (top violations = accroche technique)
 - [ ] Argumentaire juridique standardisé (régime EAA code conso, pas art. 47/Arcom —
       ne jamais confondre les seuils, cf étude de faisabilité)
