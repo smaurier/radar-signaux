@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { DomainesService } from '../domaines/domaines.service';
 import { MentionsLegalesService } from '../entreprises/mentions-legales.service';
 import { QualificationService } from '../entreprises/qualification.service';
@@ -95,7 +96,22 @@ export class PipelineService {
    * peut deja enchainer plusieurs appels reseau + navigateur, pas la peine
    * d'ajouter de la pression supplementaire avec du parallélisme.
    */
-  async traiterLot(limiteDomaines = 50, nombreATraiter = 10): Promise<ProspectA11y[]> {
+  // 7h45, avant le digest a11y (8h) -- laisse une marge apres le mode Dev
+  // (7h-7h30) pour ne pas saturer le navigateur headless partage.
+  @Cron('45 7 * * *')
+  async runDaily(): Promise<void> {
+    await this.traiterLot();
+  }
+
+  /**
+   * Defaut 10000 : le plus petit palier CrUX reellement peuple est 1000
+   * (pas de valeur continue en dessous, cf domaines.service.ts) -- un
+   * defaut plus bas ne retournerait silencieusement rien. 15/jour : le
+   * pipeline complet par domaine peut enchainer plusieurs appels reseau +
+   * navigateur (jusqu'a un scan axe-core), pas la peine de viser un trop
+   * gros volume par run quotidien.
+   */
+  async traiterLot(limiteDomaines = 10000, nombreATraiter = 15): Promise<ProspectA11y[]> {
     const domaines = await this.domaines.listerDomaines(limiteDomaines);
     const aTraiter = domaines.filter((d) => !this.storage.dejaTraite(d)).slice(0, nombreATraiter);
 

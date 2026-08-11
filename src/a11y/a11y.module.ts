@@ -11,6 +11,8 @@ import { ScanService } from './scan/scan.service';
 import { ScanController } from './scan/scan.controller';
 import { PipelineService } from './pipeline/pipeline.service';
 import { PipelineController } from './pipeline/pipeline.controller';
+import { A11yNotificationsService } from './notifications/a11y-notifications.service';
+import { A11yNotificationsController } from './notifications/a11y-notifications.controller';
 import { A11yStorageService } from './storage/a11y-storage.service';
 import { NavigateurService } from './navigateur.service';
 import { PageFetcherService } from './page-fetcher.service';
@@ -23,6 +25,7 @@ import { PageFetcherService } from './page-fetcher.service';
     DeclarationController,
     ScanController,
     PipelineController,
+    A11yNotificationsController,
   ],
   providers: [
     DomainesService,
@@ -31,6 +34,7 @@ import { PageFetcherService } from './page-fetcher.service';
     DeclarationService,
     ScanService,
     PipelineService,
+    A11yNotificationsService,
     A11yStorageService,
     NavigateurService,
     PageFetcherService,

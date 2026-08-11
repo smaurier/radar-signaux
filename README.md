@@ -12,7 +12,7 @@ Un seul moteur cron, conçu pour porter plusieurs collecteurs indépendants :
   sont en train de le faire, en croisant les avis de modification de capital publiés au
   BODACC avec les données INPI (montant) et la presse spécialisée (contexte). Utile pour
   une veille emploi ciblée sur les entreprises en croissance.
-- **Mode Freelance a11y (en cours)** — détecte les sites e-commerce FR sans déclaration
+- **Mode Freelance a11y (implémenté)** — détecte les sites e-commerce FR sans déclaration
   d'accessibilité RGAA/EAA, pour de la prospection qualifiée. Portée France uniquement
   pour l'instant (pas d'abstraction multi-pays : le mécanisme de détection change trop
   d'un régime juridique à l'autre pour se généraliser sans un vrai besoin concret).
@@ -41,8 +41,10 @@ npx playwright install chromium   # navigateur headless (repli anti-bot, mode a1
 npm run start                     # démarre l'API sur http://localhost:3000
 ```
 
-Le cron quotidien (7h) se déclenche automatiquement une fois l'app démarrée
-(`ScheduleModule`). Pour tester sans attendre le cron :
+Les crons quotidiens se déclenchent automatiquement une fois l'app démarrée
+(`ScheduleModule`) : mode Dev à 7h (détection → enrichissement 7h05 → qualification INPI
+→ actes → presse 7h15 → digest 7h30), mode a11y à 7h45 (pipeline sur 15 nouveaux
+domaines CrUX) → digest a11y à 8h. Pour tester sans attendre le cron :
 
 ```bash
 curl -X POST http://localhost:3000/bodacc/run          # déclenche une collecte immédiate
@@ -65,6 +67,8 @@ curl -X POST "http://localhost:3000/a11y/traiter?domaine=www.exemple.fr"     # u
 curl -X POST "http://localhost:3000/a11y/traiter-lot?limiteDomaines=1000&n=10" # lot depuis CrUX
 curl "http://localhost:3000/a11y/prospects"  # prospects qualifiés + déclaration non conforme/absente
 curl "http://localhost:3000/a11y/recent"     # tout ce qui a été traité, quelle que soit l'issue
+
+curl -X POST "http://localhost:3000/a11y/notifications/run"  # envoie le digest a11y (si prospects en attente)
 ```
 
 ⚠️ Le rang CrUX n'est **pas continu** : les seules valeurs possibles sont 1000, 5000,
@@ -233,10 +237,10 @@ de faisabilité du 01/08).
 - [x] Pipeline unifié (`/a11y/traiter` par domaine, `/a11y/traiter-lot` depuis le
       classement CrUX, persistance SQLite dédiée avec dédup, arrêt anticipé dès qu'un
       domaine sort de la course — pas de scan axe-core gaspillé sur un mauvais candidat)
+- [x] Cron automatique (`@Cron('45 7 * * *')` sur le pipeline, 15 domaines/jour) +
+      digest email quotidien (8h, réutilise Gmail SMTP déjà configuré pour le mode Dev)
 - [ ] Argumentaire juridique standardisé (régime EAA code conso, pas art. 47/Arcom —
       ne jamais confondre les seuils, cf étude de faisabilité)
-- [ ] Cron automatique pour le mode a11y (pour l'instant déclenché manuellement, pas de
-      `@Cron` comme le mode Dev)
 
 ## Étude de faisabilité
 
