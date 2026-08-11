@@ -7,6 +7,7 @@ import { PresseModule } from './presse/presse.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { EntreprisesModule } from './entreprises/entreprises.module';
 import { InpiModule } from './inpi/inpi.module';
+import { A11yModule } from './a11y/a11y.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { InpiModule } from './inpi/inpi.module';
     InpiModule,
     PresseModule,
     NotificationsModule,
+    A11yModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -12,8 +12,10 @@ Un seul moteur cron, conçu pour porter plusieurs collecteurs indépendants :
   sont en train de le faire, en croisant les avis de modification de capital publiés au
   BODACC avec les données INPI (montant) et la presse spécialisée (contexte). Utile pour
   une veille emploi ciblée sur les entreprises en croissance.
-- **Mode Freelance a11y (à venir)** — détecte les sites e-commerce FR sans déclaration
-  d'accessibilité RGAA/EAA, pour de la prospection qualifiée.
+- **Mode Freelance a11y (en cours)** — détecte les sites e-commerce FR sans déclaration
+  d'accessibilité RGAA/EAA, pour de la prospection qualifiée. Portée France uniquement
+  pour l'instant (pas d'abstraction multi-pays : le mécanisme de détection change trop
+  d'un régime juridique à l'autre pour se généraliser sans un vrai besoin concret).
 
 Le signal le plus précoce vient du greffe : une augmentation de capital est publiée au
 BODACC souvent avant tout communiqué de presse, et capte aussi les levées jamais annoncées
@@ -35,7 +37,8 @@ NestJS + TypeScript, SQLite local (`better-sqlite3`) pour la déduplication entr
 
 ```bash
 npm install
-npm run start        # démarre l'API sur http://localhost:3000
+npx playwright install chromium   # navigateur headless (repli anti-bot, mode a11y)
+npm run start                     # démarre l'API sur http://localhost:3000
 ```
 
 Le cron quotidien (7h) se déclenche automatiquement une fois l'app démarrée
@@ -49,6 +52,10 @@ curl -X POST http://localhost:3000/inpi/lire-actes      # lit le PV de decision 
 curl -X POST http://localhost:3000/presse/run           # tente de confirmer les signaux via la presse
 curl -X POST http://localhost:3000/notifications/run    # envoie le digest email (si signaux en attente)
 curl http://localhost:3000/bodacc/signaux               # liste les signaux stockés (statut complet)
+
+# mode Freelance a11y (en cours)
+curl "http://localhost:3000/a11y/domaines?limite=1000"        # domaines FR cibles (CrUX top N)
+curl "http://localhost:3000/a11y/siren?domaine=www.exemple.fr" # extrait le SIREN des mentions légales
 ```
 
 ### Configuration (variables d'environnement, `.env` local jamais committé)
@@ -113,6 +120,37 @@ curl http://localhost:3000/bodacc/signaux               # liste les signaux stoc
    capital actuel et, quand disponible, le sens/montant réel de la modification. Résume
    le reste en un compte (évite un mail de 250+ lignes).
 
+## Comment ça marche (mode Freelance a11y — en cours)
+
+Pipeline **inversé** par rapport au mode Dev : SIRENE n'a pas les sites web des
+entreprises, donc on part du domaine pour retrouver le SIREN, pas l'inverse (cf étude
+de faisabilité du 01/08).
+
+1. **Sourcing des domaines** — classement CrUX (Chrome UX Report) France, publié
+   mensuellement en clair sur GitHub (`zakird/crux-top-lists`), gratuit, sans compte
+   BigQuery. ~917k domaines FR au total (jusqu'au palier top-1M) ; testé en direct sur
+   le fichier réel de juillet 2026. Le fichier du mois en cours n'existe pas encore au
+   moment de la collecte (retard de publication d'~1 mois) : repli automatique sur les
+   mois précédents.
+2. **Extraction du SIREN** — cherche un lien « mentions légales » dans le HTML de la
+   home (priorité au mot dans l'URL elle-même, plus robuste qu'au texte visible du
+   lien, qui peut être mal encodé ou enveloppé dans des balises imbriquées), sinon
+   essaie des chemins usuels. Motif SIREN/SIRET/RCS cherché sur la page trouvée.
+   **Piège d'encodage réel rencontré** : certains sites ne sont pas servis en UTF-8
+   propre, un accent (« légales ») devient un caractère de remplacement — les regex
+   utilisent un joker plutôt que de deviner l'encodage exact.
+3. **Anti-bot, constaté en direct** — sur un échantillon test de 10 domaines réels,
+   ~40 % ont bloqué le `fetch()` simple (HTTP 403). Diagnostic confirmé : ce n'est pas
+   le User-Agent (curl avec le même UA passait), c'est le **fingerprinting TLS/HTTP**
+   du client Node (Datadome et équivalents, très répandus sur l'e-commerce FR). Un
+   statut `bloque` distinct est toujours renvoyé (jamais confondu avec « pas de
+   déclaration » — un faux négatif de ce genre serait dangereux en prospection). Repli
+   automatique via navigateur headless (Playwright/Chromium) sur blocage uniquement
+   (pas sur simple timeout, pour ne pas payer le coût du navigateur inutilement) —
+   validé en direct : 2 sites précédemment bloqués débloqués avec le bon SIREN retrouvé.
+4. **À venir** : qualification CA/effectif/NAF via l'API Recherche d'entreprises (déjà
+   utilisée en mode Dev), détection de la déclaration d'accessibilité elle-même.
+
 ## Roadmap
 
 - [x] Confirmation presse (RSS Maddyness / FrenchWeb, matching par nom d'entreprise)
@@ -125,10 +163,21 @@ curl http://localhost:3000/bodacc/signaux               # liste les signaux stoc
       ci-dessus, pas prioritaire à affiner pour l'instant)
 - [ ] Affiner l'heuristique « tech probable » avec l'usage (elle peut rater de vraies
       entreprises tech hors classification NAF standard)
-- [ ] Mode Freelance a11y (scanner de déclaration d'accessibilité RGAA/EAA) — **priorité
-      actuelle**, c'est le mode qui intéresse le plus Sylvain
 - [ ] Serveur MCP en lecture seule (`get_signals`, `search_company`) pour interroger le
       radar depuis un autre outil
+
+### Mode Freelance a11y — **priorité actuelle**, c'est le mode qui intéresse le plus Sylvain
+
+- [x] Sourcing des domaines (CrUX top lists FR)
+- [x] Extraction du SIREN depuis les mentions légales, avec repli navigateur headless
+      sur blocage anti-bot (validé en direct, ~40 % de blocage sur fetch() simple)
+- [ ] Qualification CA/effectif/NAF (API Recherche d'entreprises, filtre régime EAA :
+      >10 salariés et >2M€ CA)
+- [ ] Détection de la déclaration d'accessibilité (regex sur home + chemins usuels +
+      footer + CGV/mentions légales, statut DECLARATION_TROUVEE/ABSENTE/INDETERMINE)
+- [ ] Scan axe-core sur les prospects qualifiés (top violations = accroche technique)
+- [ ] Argumentaire juridique standardisé (régime EAA code conso, pas art. 47/Arcom —
+      ne jamais confondre les seuils, cf étude de faisabilité)
 
 ## Étude de faisabilité
 
