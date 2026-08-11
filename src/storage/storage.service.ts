@@ -22,6 +22,10 @@ export interface BodaccSignal {
   categorieEntreprise?: string | null;
   trancheEffectif?: string | null;
   dateCreation?: string | null;
+  // presents seulement quand lus depuis listRecent (apres migration INPI)
+  inpiQualifie?: 0 | 1;
+  inpiCapital?: number | null;
+  inpiErreur?: string | null;
 }
 
 export interface PresseConfirmation {
@@ -36,6 +40,11 @@ export interface Enrichissement {
   categorieEntreprise: string | null;
   trancheEffectif: string | null;
   dateCreation: string | null;
+}
+
+export interface QualificationInpi {
+  capital: number | null;
+  erreur: string | null;
 }
 
 /**
@@ -97,6 +106,9 @@ export class StorageService implements OnModuleDestroy {
     addColumn('categorie_entreprise', 'categorie_entreprise TEXT');
     addColumn('tranche_effectif', 'tranche_effectif TEXT');
     addColumn('date_creation', 'date_creation TEXT');
+    addColumn('inpi_qualifie', 'inpi_qualifie INTEGER NOT NULL DEFAULT 0');
+    addColumn('inpi_capital', 'inpi_capital REAL');
+    addColumn('inpi_erreur', 'inpi_erreur TEXT');
   }
 
   /**
@@ -133,13 +145,40 @@ export class StorageService implements OnModuleDestroy {
                 presse_url as presseUrl, presse_titre as presseTitre,
                 enrichi, naf_code as nafCode, section_activite as sectionActivite,
                 categorie_entreprise as categorieEntreprise,
-                tranche_effectif as trancheEffectif, date_creation as dateCreation
+                tranche_effectif as trancheEffectif, date_creation as dateCreation,
+                inpi_qualifie as inpiQualifie, inpi_capital as inpiCapital,
+                inpi_erreur as inpiErreur
          FROM bodacc_signaux
          ORDER BY date_parution DESC
          LIMIT ?`,
       )
       .all(limit);
     return rows as BodaccSignal[];
+  }
+
+  /** Signaux jamais encore qualifies via l'API INPI (capital social). */
+  listUnqualifiedByInpi(limit = 500): BodaccSignal[] {
+    const rows = this.db
+      .prepare(
+        `SELECT siren, date_parution as dateParution, region_code as regionCode,
+                descriptif_brut as descriptifBrut, commercant, tribunal
+         FROM bodacc_signaux
+         WHERE inpi_qualifie = 0
+         ORDER BY date_parution DESC
+         LIMIT ?`,
+      )
+      .all(limit);
+    return rows as BodaccSignal[];
+  }
+
+  markQualifiedByInpi(siren: string, dateParution: string, qualification: QualificationInpi): void {
+    this.db
+      .prepare(
+        `UPDATE bodacc_signaux
+         SET inpi_qualifie = 1, inpi_capital = @capital, inpi_erreur = @erreur
+         WHERE siren = @siren AND date_parution = @dateParution`,
+      )
+      .run({ siren, dateParution, ...qualification });
   }
 
   /** Signaux jamais encore enrichis (NAF/secteur), candidats a l'appel API. */
@@ -209,7 +248,9 @@ export class StorageService implements OnModuleDestroy {
                 presse_url as presseUrl, presse_titre as presseTitre,
                 enrichi, naf_code as nafCode, section_activite as sectionActivite,
                 categorie_entreprise as categorieEntreprise,
-                tranche_effectif as trancheEffectif, date_creation as dateCreation
+                tranche_effectif as trancheEffectif, date_creation as dateCreation,
+                inpi_qualifie as inpiQualifie, inpi_capital as inpiCapital,
+                inpi_erreur as inpiErreur
          FROM bodacc_signaux
          WHERE notifie_email = 0
          ORDER BY date_parution DESC

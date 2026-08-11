@@ -44,6 +44,7 @@ Le cron quotidien (7h) se déclenche automatiquement une fois l'app démarrée
 ```bash
 curl -X POST http://localhost:3000/bodacc/run          # déclenche une collecte immédiate
 curl -X POST http://localhost:3000/entreprises/enrichir # enrichit les signaux (NAF, secteur, effectif)
+curl -X POST http://localhost:3000/inpi/qualifier       # lit le capital social actuel via l'API INPI
 curl -X POST http://localhost:3000/presse/run           # tente de confirmer les signaux via la presse
 curl -X POST http://localhost:3000/notifications/run    # envoie le digest email (si signaux en attente)
 curl http://localhost:3000/bodacc/signaux               # liste les signaux stockés (statut complet)
@@ -60,6 +61,7 @@ curl http://localhost:3000/bodacc/signaux               # liste les signaux stoc
 | `GMAIL_USER` | — | Adresse Gmail émettrice des notifications |
 | `GMAIL_APP_PASSWORD` | — | Mot de passe d'application Gmail (pas le mot de passe du compte) |
 | `RADAR_NOTIFY_TO` | `GMAIL_USER` | Destinataire du digest |
+| `INPI_USERNAME` / `INPI_PASSWORD` | — | Identifiants du compte data.inpi.fr (accès API RNE) |
 
 ## Comment ça marche (mode Dev)
 
@@ -82,14 +84,18 @@ curl http://localhost:3000/bodacc/signaux               # liste les signaux stoc
 4. **Confirmation presse** — les signaux pas encore confirmés sont comparés (matching de
    nom d'entreprise, normalisé et purgé des formes juridiques SAS/SARL/SCI/etc.) aux flux
    RSS Maddyness et FrenchWeb. Un match ajoute la source, l'URL et le titre de l'article.
-5. **Digest email quotidien** — envoyé via Gmail SMTP (mot de passe d'application, pas
-   Telegram : pas installé). Détaille les signaux tagués « tech probable », résume le
-   reste en un compte (évite un mail de 250+ lignes).
-6. **Limite connue** — depuis le guichet unique (2023), le descriptif BODACC ne précise
-   plus le sens (hausse/baisse) ni le montant de la modification de capital. Ce
-   collecteur produit donc des **candidats à qualifier**, pas des levées confirmées.
-   **L'étape de qualification INPI (lire le nouveau capital, ne garder que les vraies
-   hausses) reste le vrai filtre manquant** — voir Roadmap.
+5. **Qualification INPI** — lit le capital social actuel de l'entreprise via l'API RNE
+   (`registre-national-entreprises.inpi.fr`, login/mot de passe → token). Le schéma JSON
+   du RNE n'étant pas documenté de façon fiable, le champ capital est retrouvé par
+   balayage récursif des clés contenant « capital » plutôt qu'un chemin deviné à
+   l'aveugle (calibré en direct : `formality.content.personneMorale.identite.description.montantCapital`).
+   **Limite assumée** : cet endpoint donne le capital **actuel**, pas l'historique — il
+   ne dit donc pas si LA modification détectée au BODACC était une hausse ou une baisse
+   ni son montant (ça demanderait de lire l'acte/PV d'AG associé, en PDF, hors scope
+   actuel). Le capital affiché est un indice de taille, pas une preuve de levée.
+6. **Digest email quotidien** — envoyé via Gmail SMTP (mot de passe d'application, pas
+   Telegram : pas installé). Détaille les signaux tagués « tech probable » avec leur
+   capital actuel, résume le reste en un compte (évite un mail de 250+ lignes).
 
 ## Roadmap
 
@@ -97,8 +103,9 @@ curl http://localhost:3000/bodacc/signaux               # liste les signaux stoc
 - [x] Enrichissement sectoriel (NAF/effectif/catégorie, tag tech probable à affiner)
 - [x] Notifications par email (Gmail SMTP)
 - [x] Passage à la France entière (pagination BODACC)
-- [ ] Qualification INPI (nouveau capital vs ancien, ne garder que les hausses
-      significatives) — **le vrai filtre utile**, cf limite ci-dessus
+- [x] Qualification INPI (capital social actuel, validé en direct sur 285 signaux réels,
+      0 erreur) — reste : lire l'acte pour connaître le sens/montant de la modification
+      elle-même (hors scope actuel, nécessite un parsing de PDF)
 - [ ] Affiner l'heuristique « tech probable » avec l'usage (elle peut rater de vraies
       entreprises tech hors classification NAF standard)
 - [ ] Mode Freelance a11y (scanner de déclaration d'accessibilité RGAA/EAA)

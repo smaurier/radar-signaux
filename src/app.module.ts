@@ -6,12 +6,14 @@ import { BodaccModule } from './bodacc/bodacc.module';
 import { PresseModule } from './presse/presse.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { EntreprisesModule } from './entreprises/entreprises.module';
+import { InpiModule } from './inpi/inpi.module';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
     BodaccModule,
     EntreprisesModule,
+    InpiModule,
     PresseModule,
     NotificationsModule,
   ],

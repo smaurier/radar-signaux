@@ -94,6 +94,9 @@ export class NotificationsService {
       s.categorieEntreprise,
       s.trancheEffectif ? `effectif ${s.trancheEffectif}` : null,
       s.dateCreation ? `cree ${s.dateCreation}` : null,
+      typeof s.inpiCapital === 'number'
+        ? `capital actuel ${s.inpiCapital.toLocaleString('fr-FR')} €`
+        : null,
     ].filter(Boolean);
     const tag = isSecteurTechProbable(s.nafCode, s.sectionActivite) ? '🔧 tech probable — ' : '';
     return `${tag}${parts.join(', ') || 'donnees indisponibles'}`;
@@ -116,7 +119,8 @@ export class NotificationsService {
       '',
       `+ ${autres.length} autre(s) signal(aux) (PME hors NAF tech, ou pas encore enrichi) — consultables via /bodacc/signaux.`,
       '',
-      'Rappel : le BODACC seul ne confirme ni le sens ni le montant de la modification de capital.',
+      'Rappel : le "capital actuel" (INPI) est l\'etat present, pas le montant de LA modification',
+      'detectee au BODACC (qui ne precise ni sens ni montant depuis 2023) -- indice de taille, pas de preuve.',
       '"tech probable" est une heuristique NAF, pas une classification fiable (a verifier manuellement).',
       'Elle peut rater de vraies entreprises tech hors classification standard : a affiner avec l\'usage.',
     ].join('\n');
@@ -136,8 +140,10 @@ export class NotificationsService {
       <p><strong>${techProbable.length} tague(s) tech probable</strong> (detail) :</p>
       <ul>${lignes || '<li>(aucun)</li>'}</ul>
       <p>+ <strong>${autres.length}</strong> autre(s) signal(aux) (PME hors NAF tech, ou pas encore enrichi) — consultables via <code>/bodacc/signaux</code>.</p>
-      <p><small>Rappel : le BODACC seul ne confirme ni le sens ni le montant de la modification de capital.
-      « tech probable » est une heuristique NAF, pas une classification fiable — a verifier manuellement,
-      et peut rater de vraies entreprises tech hors classification standard (a affiner avec l'usage).</small></p>`;
+      <p><small>Rappel : le « capital actuel » (INPI) est l'etat present, pas le montant de LA
+      modification detectee au BODACC (qui ne precise ni sens ni montant depuis 2023) — indice de
+      taille, pas de preuve. « tech probable » est une heuristique NAF, pas une classification
+      fiable — a verifier manuellement, et peut rater de vraies entreprises tech hors classification
+      standard (a affiner avec l'usage).</small></p>`;
   }
 }
