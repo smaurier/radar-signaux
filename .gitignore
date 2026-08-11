@@ -1,0 +1,30 @@
+# compiled output
+/dist
+/node_modules
+
+# logs
+logs
+*.log
+npm-debug.log*
+
+# data privee (leads, resultats de scan) - JAMAIS public, cf decision 01/08
+/data
+*.sqlite
+*.sqlite3
+.env
+.env.*
+
+# OS
+.DS_Store
+
+# tests
+/coverage
+/.nyc_output
+
+# IDEs
+.idea
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
