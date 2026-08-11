@@ -53,10 +53,23 @@ curl -X POST http://localhost:3000/presse/run           # tente de confirmer les
 curl -X POST http://localhost:3000/notifications/run    # envoie le digest email (si signaux en attente)
 curl http://localhost:3000/bodacc/signaux               # liste les signaux stockés (statut complet)
 
-# mode Freelance a11y (en cours)
-curl "http://localhost:3000/a11y/domaines?limite=1000"        # domaines FR cibles (CrUX top N)
-curl "http://localhost:3000/a11y/siren?domaine=www.exemple.fr" # extrait le SIREN des mentions légales
+# mode Freelance a11y — étapes isolées (dev/debug)
+curl "http://localhost:3000/a11y/domaines?limite=1000"          # domaines FR cibles (CrUX top N)
+curl "http://localhost:3000/a11y/siren?domaine=www.exemple.fr"   # extrait le SIREN des mentions légales
+curl "http://localhost:3000/a11y/qualification?siren=X&domaine=Y" # CA/effectif + cohérence
+curl "http://localhost:3000/a11y/declaration?domaine=www.exemple.fr" # déclaration RGAA
+curl "http://localhost:3000/a11y/scan?domaine=www.exemple.fr"    # violations axe-core
+
+# mode Freelance a11y — pipeline unifié (enchaîne tout, persiste, arrêt anticipé)
+curl -X POST "http://localhost:3000/a11y/traiter?domaine=www.exemple.fr"     # un domaine
+curl -X POST "http://localhost:3000/a11y/traiter-lot?limiteDomaines=1000&n=10" # lot depuis CrUX
+curl "http://localhost:3000/a11y/prospects"  # prospects qualifiés + déclaration non conforme/absente
+curl "http://localhost:3000/a11y/recent"     # tout ce qui a été traité, quelle que soit l'issue
 ```
+
+⚠️ Le rang CrUX n'est **pas continu** : les seules valeurs possibles sont 1000, 5000,
+10000, 50000, 100000, 500000, 1000000 (paliers du classement). `limiteDomaines=20` ne
+retourne donc rien — utiliser au moins `1000`.
 
 ### Configuration (variables d'environnement, `.env` local jamais committé)
 
@@ -217,11 +230,13 @@ de faisabilité du 01/08).
 - [x] Scan axe-core sur les prospects qualifiés (top 5 violations triées par gravité,
       validé en direct sur caroll.com : 9 violations dont 43 liens sans texte, 6 images
       sans alt — jamais vendu comme un taux de conformité, cf limite dans le code)
+- [x] Pipeline unifié (`/a11y/traiter` par domaine, `/a11y/traiter-lot` depuis le
+      classement CrUX, persistance SQLite dédiée avec dédup, arrêt anticipé dès qu'un
+      domaine sort de la course — pas de scan axe-core gaspillé sur un mauvais candidat)
 - [ ] Argumentaire juridique standardisé (régime EAA code conso, pas art. 47/Arcom —
       ne jamais confondre les seuils, cf étude de faisabilité)
-- [ ] Pipeline unifié (un seul endpoint qui enchaîne les 5 étapes pour un domaine et
-      persiste le résultat — chaque étape est testée isolément pour l'instant, comme
-      pour le mode Dev au démarrage)
+- [ ] Cron automatique pour le mode a11y (pour l'instant déclenché manuellement, pas de
+      `@Cron` comme le mode Dev)
 
 ## Étude de faisabilité
 
