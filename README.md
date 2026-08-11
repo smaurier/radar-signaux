@@ -45,6 +45,7 @@ Le cron quotidien (7h) se déclenche automatiquement une fois l'app démarrée
 curl -X POST http://localhost:3000/bodacc/run          # déclenche une collecte immédiate
 curl -X POST http://localhost:3000/entreprises/enrichir # enrichit les signaux (NAF, secteur, effectif)
 curl -X POST http://localhost:3000/inpi/qualifier       # lit le capital social actuel via l'API INPI
+curl -X POST http://localhost:3000/inpi/lire-actes      # lit le PV de decision (sens + montant reels)
 curl -X POST http://localhost:3000/presse/run           # tente de confirmer les signaux via la presse
 curl -X POST http://localhost:3000/notifications/run    # envoie le digest email (si signaux en attente)
 curl http://localhost:3000/bodacc/signaux               # liste les signaux stockés (statut complet)
@@ -90,12 +91,27 @@ curl http://localhost:3000/bodacc/signaux               # liste les signaux stoc
    balayage récursif des clés contenant « capital » plutôt qu'un chemin deviné à
    l'aveugle (calibré en direct : `formality.content.personneMorale.identite.description.montantCapital`).
    **Limite assumée** : cet endpoint donne le capital **actuel**, pas l'historique — il
-   ne dit donc pas si LA modification détectée au BODACC était une hausse ou une baisse
-   ni son montant (ça demanderait de lire l'acte/PV d'AG associé, en PDF, hors scope
-   actuel). Le capital affiché est un indice de taille, pas une preuve de levée.
-6. **Digest email quotidien** — envoyé via Gmail SMTP (mot de passe d'application, pas
+   ne dit donc pas, à lui seul, si LA modification détectée au BODACC était une hausse
+   ou une baisse ni son montant. Le capital affiché est un indice de taille, pas une
+   preuve de levée.
+6. **Lecture d'actes** — va plus loin : télécharge le PV de décision (PDF, via l'API RNE
+   actes/statuts) et en extrait le texte pour trouver le **sens réel** (« Augmentation »
+   vs « Réduction de Capital ») et si possible le **montant exact** de la modification.
+   PDF texte natif (pas de scan), donc extractible. **Résultats mesurés en direct sur
+   177 signaux réels** : sens détecté dans **53 %** des cas (vrai gain vs le BODACC seul
+   qui ne donne jamais ni sens ni montant) ; montant exact (avant **et** après) détecté
+   dans seulement **~1 %** des cas — la formulation juridique varie trop d'un cabinet à
+   l'autre pour qu'une regex généralise au-delà du cas calibré. Un retry simple sur les
+   appels réseau (`fetch failed` transitoires, probablement des connexions HTTP
+   recyclées côté serveur) a fait passer le taux de traitement de 77 % à 100 % sans
+   rien de plus complexe. **Conclusion honnête** : le sens seul justifie la fonctionnalité,
+   le montant exact ne vaut quasiment rien en l'état — à revisiter seulement si le besoin
+   de montant précis redevient prioritaire (élargir la bibliothèque de formulations, ou
+   accepter une vérification manuelle sur les cas prioritaires plutôt que d'automatiser).
+7. **Digest email quotidien** — envoyé via Gmail SMTP (mot de passe d'application, pas
    Telegram : pas installé). Détaille les signaux tagués « tech probable » avec leur
-   capital actuel, résume le reste en un compte (évite un mail de 250+ lignes).
+   capital actuel et, quand disponible, le sens/montant réel de la modification. Résume
+   le reste en un compte (évite un mail de 250+ lignes).
 
 ## Roadmap
 
@@ -104,11 +120,13 @@ curl http://localhost:3000/bodacc/signaux               # liste les signaux stoc
 - [x] Notifications par email (Gmail SMTP)
 - [x] Passage à la France entière (pagination BODACC)
 - [x] Qualification INPI (capital social actuel, validé en direct sur 285 signaux réels,
-      0 erreur) — reste : lire l'acte pour connaître le sens/montant de la modification
-      elle-même (hors scope actuel, nécessite un parsing de PDF)
+      0 erreur)
+- [x] Lecture d'actes (sens détecté 53 % des cas, montant exact ~1 % — voir limite
+      ci-dessus, pas prioritaire à affiner pour l'instant)
 - [ ] Affiner l'heuristique « tech probable » avec l'usage (elle peut rater de vraies
       entreprises tech hors classification NAF standard)
-- [ ] Mode Freelance a11y (scanner de déclaration d'accessibilité RGAA/EAA)
+- [ ] Mode Freelance a11y (scanner de déclaration d'accessibilité RGAA/EAA) — **priorité
+      actuelle**, c'est le mode qui intéresse le plus Sylvain
 - [ ] Serveur MCP en lecture seule (`get_signals`, `search_company`) pour interroger le
       radar depuis un autre outil
 

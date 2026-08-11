@@ -26,6 +26,13 @@ export interface BodaccSignal {
   inpiQualifie?: 0 | 1;
   inpiCapital?: number | null;
   inpiErreur?: string | null;
+  // presents seulement quand lus depuis listRecent (apres migration actes)
+  acteLu?: 0 | 1;
+  acteSens?: 'hausse' | 'baisse' | null;
+  acteCapitalAvant?: number | null;
+  acteCapitalApres?: number | null;
+  acteId?: string | null;
+  acteErreur?: string | null;
 }
 
 export interface PresseConfirmation {
@@ -44,6 +51,14 @@ export interface Enrichissement {
 
 export interface QualificationInpi {
   capital: number | null;
+  erreur: string | null;
+}
+
+export interface LectureActe {
+  sens: 'hausse' | 'baisse' | null;
+  capitalAvant: number | null;
+  capitalApres: number | null;
+  acteId: string | null;
   erreur: string | null;
 }
 
@@ -109,6 +124,12 @@ export class StorageService implements OnModuleDestroy {
     addColumn('inpi_qualifie', 'inpi_qualifie INTEGER NOT NULL DEFAULT 0');
     addColumn('inpi_capital', 'inpi_capital REAL');
     addColumn('inpi_erreur', 'inpi_erreur TEXT');
+    addColumn('acte_lu', 'acte_lu INTEGER NOT NULL DEFAULT 0');
+    addColumn('acte_sens', 'acte_sens TEXT');
+    addColumn('acte_capital_avant', 'acte_capital_avant REAL');
+    addColumn('acte_capital_apres', 'acte_capital_apres REAL');
+    addColumn('acte_id', 'acte_id TEXT');
+    addColumn('acte_erreur', 'acte_erreur TEXT');
   }
 
   /**
@@ -147,7 +168,10 @@ export class StorageService implements OnModuleDestroy {
                 categorie_entreprise as categorieEntreprise,
                 tranche_effectif as trancheEffectif, date_creation as dateCreation,
                 inpi_qualifie as inpiQualifie, inpi_capital as inpiCapital,
-                inpi_erreur as inpiErreur
+                inpi_erreur as inpiErreur,
+                acte_lu as acteLu, acte_sens as acteSens,
+                acte_capital_avant as acteCapitalAvant, acte_capital_apres as acteCapitalApres,
+                acte_id as acteId, acte_erreur as acteErreur
          FROM bodacc_signaux
          ORDER BY date_parution DESC
          LIMIT ?`,
@@ -179,6 +203,36 @@ export class StorageService implements OnModuleDestroy {
          WHERE siren = @siren AND date_parution = @dateParution`,
       )
       .run({ siren, dateParution, ...qualification });
+  }
+
+  /**
+   * Signaux jamais encore passes par la lecture d'acte (etape lourde :
+   * telechargement + parsing PDF). Limite par defaut plus basse que les
+   * autres etapes (traitement plus couteux en temps/reseau).
+   */
+  listSignauxSansActeLu(limit = 100): BodaccSignal[] {
+    const rows = this.db
+      .prepare(
+        `SELECT siren, date_parution as dateParution, region_code as regionCode,
+                descriptif_brut as descriptifBrut, commercant, tribunal
+         FROM bodacc_signaux
+         WHERE acte_lu = 0
+         ORDER BY date_parution DESC
+         LIMIT ?`,
+      )
+      .all(limit);
+    return rows as BodaccSignal[];
+  }
+
+  markActeLu(siren: string, dateParution: string, lecture: LectureActe): void {
+    this.db
+      .prepare(
+        `UPDATE bodacc_signaux
+         SET acte_lu = 1, acte_sens = @sens, acte_capital_avant = @capitalAvant,
+             acte_capital_apres = @capitalApres, acte_id = @acteId, acte_erreur = @erreur
+         WHERE siren = @siren AND date_parution = @dateParution`,
+      )
+      .run({ siren, dateParution, ...lecture });
   }
 
   /** Signaux jamais encore enrichis (NAF/secteur), candidats a l'appel API. */
@@ -250,7 +304,10 @@ export class StorageService implements OnModuleDestroy {
                 categorie_entreprise as categorieEntreprise,
                 tranche_effectif as trancheEffectif, date_creation as dateCreation,
                 inpi_qualifie as inpiQualifie, inpi_capital as inpiCapital,
-                inpi_erreur as inpiErreur
+                inpi_erreur as inpiErreur,
+                acte_lu as acteLu, acte_sens as acteSens,
+                acte_capital_avant as acteCapitalAvant, acte_capital_apres as acteCapitalApres,
+                acte_id as acteId, acte_erreur as acteErreur
          FROM bodacc_signaux
          WHERE notifie_email = 0
          ORDER BY date_parution DESC

@@ -9,3 +9,18 @@ export interface InpiLoginResponse {
  * defensive (plusieurs chemins essayes + log de calibration).
  */
 export type InpiCompanyResponse = Record<string, unknown>;
+
+/** Un acte tel que liste par GET /companies/{siren}/attachments. */
+export interface InpiActe {
+  id: string;
+  dateDepot: string;
+  typeDocument?: string;
+  libelle?: string;
+  nomDocument?: string;
+}
+
+export interface InpiAttachmentsResponse {
+  actes?: InpiActe[];
+  bilans?: unknown[];
+  bilansSaisis?: unknown[];
+}

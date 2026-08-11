@@ -97,9 +97,22 @@ export class NotificationsService {
       typeof s.inpiCapital === 'number'
         ? `capital actuel ${s.inpiCapital.toLocaleString('fr-FR')} €`
         : null,
+      this.descriptionActe(s),
     ].filter(Boolean);
     const tag = isSecteurTechProbable(s.nafCode, s.sectionActivite) ? '🔧 tech probable — ' : '';
     return `${tag}${parts.join(', ') || 'donnees indisponibles'}`;
+  }
+
+  /** Sens + montant reels de la modification, quand la lecture d'acte a reussi. */
+  private descriptionActe(s: BodaccSignal): string | null {
+    if (!s.acteLu || !s.acteSens) return null;
+    const delta =
+      typeof s.acteCapitalAvant === 'number' && typeof s.acteCapitalApres === 'number'
+        ? Math.abs(s.acteCapitalApres - s.acteCapitalAvant)
+        : null;
+    const fleche = s.acteSens === 'hausse' ? '📈' : '📉';
+    const montant = delta !== null ? ` de ${delta.toLocaleString('fr-FR')} €` : '';
+    return `${fleche} ${s.acteSens}${montant} (acte lu)`;
   }
 
   private buildTextBody(signauxBruts: BodaccSignal[]): string {

@@ -1,8 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { StorageService } from '../storage/storage.service';
-import { InpiCompanyResponse, InpiLoginResponse } from './inpi.types';
-
-const BASE_URL = 'https://registre-national-entreprises.inpi.fr/api';
+import { InpiCompanyResponse } from './inpi.types';
+import { INPI_BASE_URL, InpiAuthService } from './inpi-auth.service';
 
 interface CapitalCandidate {
   path: string;
@@ -28,33 +27,14 @@ interface CapitalCandidate {
 @Injectable()
 export class InpiService {
   private readonly logger = new Logger(InpiService.name);
-  private token: string | null = null;
 
-  constructor(private readonly storage: StorageService) {}
-
-  private async login(): Promise<string> {
-    const username = process.env.INPI_USERNAME;
-    const password = process.env.INPI_PASSWORD;
-    if (!username || !password) {
-      throw new Error('INPI_USERNAME / INPI_PASSWORD manquants (.env).');
-    }
-    const response = await fetch(`${BASE_URL}/sso/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
-    });
-    if (!response.ok) {
-      throw new Error(`Login INPI en echec (${response.status} ${response.statusText})`);
-    }
-    const body = (await response.json()) as InpiLoginResponse;
-    if (!body.token) {
-      throw new Error("Login INPI : reponse sans champ 'token' (schema inattendu).");
-    }
-    return body.token;
-  }
+  constructor(
+    private readonly storage: StorageService,
+    private readonly auth: InpiAuthService,
+  ) {}
 
   private async getCompany(siren: string, token: string): Promise<InpiCompanyResponse | null> {
-    const response = await fetch(`${BASE_URL}/companies/${siren}`, {
+    const response = await fetch(`${INPI_BASE_URL}/companies/${siren}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (response.status === 404) return null;
@@ -108,7 +88,7 @@ export class InpiService {
 
     let token: string;
     try {
-      token = await this.login();
+      token = await this.auth.getToken();
     } catch (err) {
       this.logger.error(`INPI : login en echec, qualification annulee (${(err as Error).message})`);
       return 0;
