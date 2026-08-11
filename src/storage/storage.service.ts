@@ -15,12 +15,27 @@ export interface BodaccSignal {
   presseSource?: string | null;
   presseUrl?: string | null;
   presseTitre?: string | null;
+  // presents seulement quand lus depuis listRecent (apres migration enrichissement)
+  enrichi?: 0 | 1;
+  nafCode?: string | null;
+  sectionActivite?: string | null;
+  categorieEntreprise?: string | null;
+  trancheEffectif?: string | null;
+  dateCreation?: string | null;
 }
 
 export interface PresseConfirmation {
   source: string;
   url: string;
   titre: string;
+}
+
+export interface Enrichissement {
+  nafCode: string | null;
+  sectionActivite: string | null;
+  categorieEntreprise: string | null;
+  trancheEffectif: string | null;
+  dateCreation: string | null;
 }
 
 /**
@@ -75,6 +90,13 @@ export class StorageService implements OnModuleDestroy {
     addColumn('presse_source', 'presse_source TEXT');
     addColumn('presse_url', 'presse_url TEXT');
     addColumn('presse_titre', 'presse_titre TEXT');
+    addColumn('notifie_email', 'notifie_email INTEGER NOT NULL DEFAULT 0');
+    addColumn('enrichi', 'enrichi INTEGER NOT NULL DEFAULT 0');
+    addColumn('naf_code', 'naf_code TEXT');
+    addColumn('section_activite', 'section_activite TEXT');
+    addColumn('categorie_entreprise', 'categorie_entreprise TEXT');
+    addColumn('tranche_effectif', 'tranche_effectif TEXT');
+    addColumn('date_creation', 'date_creation TEXT');
   }
 
   /**
@@ -108,7 +130,10 @@ export class StorageService implements OnModuleDestroy {
         `SELECT siren, date_parution as dateParution, region_code as regionCode,
                 descriptif_brut as descriptifBrut, commercant, tribunal,
                 presse_confirmee as presseConfirmee, presse_source as presseSource,
-                presse_url as presseUrl, presse_titre as presseTitre
+                presse_url as presseUrl, presse_titre as presseTitre,
+                enrichi, naf_code as nafCode, section_activite as sectionActivite,
+                categorie_entreprise as categorieEntreprise,
+                tranche_effectif as trancheEffectif, date_creation as dateCreation
          FROM bodacc_signaux
          ORDER BY date_parution DESC
          LIMIT ?`,
@@ -117,8 +142,35 @@ export class StorageService implements OnModuleDestroy {
     return rows as BodaccSignal[];
   }
 
+  /** Signaux jamais encore enrichis (NAF/secteur), candidats a l'appel API. */
+  listUnenriched(limit = 500): BodaccSignal[] {
+    const rows = this.db
+      .prepare(
+        `SELECT siren, date_parution as dateParution, region_code as regionCode,
+                descriptif_brut as descriptifBrut, commercant, tribunal
+         FROM bodacc_signaux
+         WHERE enrichi = 0
+         ORDER BY date_parution DESC
+         LIMIT ?`,
+      )
+      .all(limit);
+    return rows as BodaccSignal[];
+  }
+
+  markEnriched(siren: string, dateParution: string, enrichissement: Enrichissement): void {
+    this.db
+      .prepare(
+        `UPDATE bodacc_signaux
+         SET enrichi = 1, naf_code = @nafCode, section_activite = @sectionActivite,
+             categorie_entreprise = @categorieEntreprise,
+             tranche_effectif = @trancheEffectif, date_creation = @dateCreation
+         WHERE siren = @siren AND date_parution = @dateParution`,
+      )
+      .run({ siren, dateParution, ...enrichissement });
+  }
+
   /** Signaux pas encore confirmes par la presse, candidats au matching RSS. */
-  listUnconfirmedByPresse(limit = 200): BodaccSignal[] {
+  listUnconfirmedByPresse(limit = 500): BodaccSignal[] {
     const rows = this.db
       .prepare(
         `SELECT siren, date_parution as dateParution, region_code as regionCode,
@@ -145,6 +197,39 @@ export class StorageService implements OnModuleDestroy {
          WHERE siren = @siren AND date_parution = @dateParution`,
       )
       .run({ siren, dateParution, ...confirmation });
+  }
+
+  /** Signaux jamais encore inclus dans un digest email. */
+  listUnnotified(limit = 500): BodaccSignal[] {
+    const rows = this.db
+      .prepare(
+        `SELECT siren, date_parution as dateParution, region_code as regionCode,
+                descriptif_brut as descriptifBrut, commercant, tribunal,
+                presse_confirmee as presseConfirmee, presse_source as presseSource,
+                presse_url as presseUrl, presse_titre as presseTitre,
+                enrichi, naf_code as nafCode, section_activite as sectionActivite,
+                categorie_entreprise as categorieEntreprise,
+                tranche_effectif as trancheEffectif, date_creation as dateCreation
+         FROM bodacc_signaux
+         WHERE notifie_email = 0
+         ORDER BY date_parution DESC
+         LIMIT ?`,
+      )
+      .all(limit);
+    return rows as BodaccSignal[];
+  }
+
+  markNotified(signals: Pick<BodaccSignal, 'siren' | 'dateParution'>[]): void {
+    const update = this.db.prepare(
+      `UPDATE bodacc_signaux SET notifie_email = 1
+       WHERE siren = @siren AND date_parution = @dateParution`,
+    );
+    const transaction = this.db.transaction(
+      (items: Pick<BodaccSignal, 'siren' | 'dateParution'>[]) => {
+        for (const item of items) update.run(item);
+      },
+    );
+    transaction(signals);
   }
 
   onModuleDestroy(): void {
