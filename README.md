@@ -43,7 +43,8 @@ Le cron quotidien (7h) se déclenche automatiquement une fois l'app démarrée
 
 ```bash
 curl -X POST http://localhost:3000/bodacc/run     # déclenche une collecte immédiate
-curl http://localhost:3000/bodacc/signaux          # liste les signaux stockés
+curl -X POST http://localhost:3000/presse/run      # tente de confirmer les signaux via la presse
+curl http://localhost:3000/bodacc/signaux          # liste les signaux stockés (avec statut presse)
 ```
 
 ### Configuration (variables d'environnement, toutes optionnelles)
@@ -62,18 +63,25 @@ curl http://localhost:3000/bodacc/signaux          # liste les signaux stockés
    configurée, sur la fenêtre glissante.
 2. **Déduplication** — chaque signal (SIREN + date de parution) est stocké en local ;
    seuls les signaux inédits remontent d'un run à l'autre.
-3. **Limite connue** — depuis le guichet unique (2023), le descriptif BODACC ne précise
-   plus le sens (hausse/baisse) ni le montant de la modification de capital. Ce
-   collecteur produit donc des **candidats à qualifier**, pas des levées confirmées.
-   L'étape de qualification (API INPI RNE pour lire le nouveau capital, confirmation par
-   la presse) est prévue mais pas encore implémentée — voir Roadmap.
+3. **Confirmation presse** — les signaux pas encore confirmés sont comparés (matching de
+   nom d'entreprise, normalisé et purgé des formes juridiques SAS/SARL/SCI/etc.) aux flux
+   RSS Maddyness et FrenchWeb. Un match ajoute la source, l'URL et le titre de l'article
+   sur le signal.
+4. **Limite connue et constatée** — depuis le guichet unique (2023), le descriptif BODACC
+   ne précise plus le sens (hausse/baisse) ni le montant de la modification de capital.
+   Ce collecteur produit donc des **candidats à qualifier**, pas des levées confirmées.
+   En pratique, sur un run réel en région AURA, la quasi-totalité des candidats sont des
+   PME/TPE locales (SCI, commerces, professions libérales) que la presse tech nationale
+   ne couvre jamais — la confirmation presse ne lève donc qu'une minorité de cas.
+   **L'étape de qualification INPI (lire le nouveau capital, ne garder que les vraies
+   hausses) est le vrai filtre utile, pas encore implémentée** — voir Roadmap.
 
 ## Roadmap
 
+- [x] Confirmation presse (RSS Maddyness / FrenchWeb, matching par nom d'entreprise)
 - [ ] Qualification INPI (nouveau capital vs ancien, ne garder que les hausses
-      significatives)
-- [ ] Confirmation presse (RSS Maddyness / FrenchWeb, matching par nom d'entreprise)
-- [ ] Notifications (Telegram ou email) au lieu de l'endpoint de lecture seule
+      significatives) — **le vrai filtre utile**, cf limite ci-dessus
+- [ ] Notifications par email (Gmail SMTP) au lieu de l'endpoint de lecture seule
 - [ ] Mode Freelance a11y (scanner de déclaration d'accessibilité RGAA/EAA)
 - [ ] Serveur MCP en lecture seule (`get_signals`, `search_company`) pour interroger le
       radar depuis un autre outil

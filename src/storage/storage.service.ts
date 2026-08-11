@@ -10,6 +10,17 @@ export interface BodaccSignal {
   descriptifBrut: string;
   commercant: string;
   tribunal: string;
+  // presents seulement quand lus depuis listRecent (apres migration presse)
+  presseConfirmee?: 0 | 1;
+  presseSource?: string | null;
+  presseUrl?: string | null;
+  presseTitre?: string | null;
+}
+
+export interface PresseConfirmation {
+  source: string;
+  url: string;
+  titre: string;
 }
 
 /**
@@ -46,6 +57,24 @@ export class StorageService implements OnModuleDestroy {
         PRIMARY KEY (siren, date_parution)
       );
     `);
+
+    // Colonnes de confirmation presse, ajoutees en migration additive (SQLite
+    // n'a pas de ADD COLUMN IF NOT EXISTS) pour ne pas casser une base
+    // existante creee avant ce champ.
+    const existing = this.db
+      .prepare(`PRAGMA table_info(bodacc_signaux)`)
+      .all() as { name: string }[];
+    const columns = new Set(existing.map((c) => c.name));
+
+    const addColumn = (name: string, ddl: string) => {
+      if (!columns.has(name)) {
+        this.db.exec(`ALTER TABLE bodacc_signaux ADD COLUMN ${ddl}`);
+      }
+    };
+    addColumn('presse_confirmee', 'presse_confirmee INTEGER NOT NULL DEFAULT 0');
+    addColumn('presse_source', 'presse_source TEXT');
+    addColumn('presse_url', 'presse_url TEXT');
+    addColumn('presse_titre', 'presse_titre TEXT');
   }
 
   /**
@@ -77,13 +106,45 @@ export class StorageService implements OnModuleDestroy {
     const rows = this.db
       .prepare(
         `SELECT siren, date_parution as dateParution, region_code as regionCode,
-                descriptif_brut as descriptifBrut, commercant, tribunal
+                descriptif_brut as descriptifBrut, commercant, tribunal,
+                presse_confirmee as presseConfirmee, presse_source as presseSource,
+                presse_url as presseUrl, presse_titre as presseTitre
          FROM bodacc_signaux
          ORDER BY date_parution DESC
          LIMIT ?`,
       )
       .all(limit);
     return rows as BodaccSignal[];
+  }
+
+  /** Signaux pas encore confirmes par la presse, candidats au matching RSS. */
+  listUnconfirmedByPresse(limit = 200): BodaccSignal[] {
+    const rows = this.db
+      .prepare(
+        `SELECT siren, date_parution as dateParution, region_code as regionCode,
+                descriptif_brut as descriptifBrut, commercant, tribunal
+         FROM bodacc_signaux
+         WHERE presse_confirmee = 0
+         ORDER BY date_parution DESC
+         LIMIT ?`,
+      )
+      .all(limit);
+    return rows as BodaccSignal[];
+  }
+
+  markConfirmedByPresse(
+    siren: string,
+    dateParution: string,
+    confirmation: PresseConfirmation,
+  ): void {
+    this.db
+      .prepare(
+        `UPDATE bodacc_signaux
+         SET presse_confirmee = 1, presse_source = @source, presse_url = @url,
+             presse_titre = @titre
+         WHERE siren = @siren AND date_parution = @dateParution`,
+      )
+      .run({ siren, dateParution, ...confirmation });
   }
 
   onModuleDestroy(): void {
