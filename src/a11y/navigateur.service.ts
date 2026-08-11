@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import { Browser, chromium } from 'playwright';
+import { Browser, chromium, Page } from 'playwright';
 
 const USER_AGENT_NAVIGATEUR =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
@@ -39,6 +39,31 @@ export class NavigateurService implements OnModuleDestroy {
       const page = await context.newPage();
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
       return await page.content();
+    } catch (err) {
+      this.logger.warn(`Navigateur : ${url} en echec (${(err as Error).message})`);
+      return null;
+    } finally {
+      await context?.close();
+    }
+  }
+
+  /**
+   * Ouvre une page reelle et la confie a `fn` (ex. AxeBuilder d'axe-core,
+   * qui a besoin d'un objet Page Playwright, pas juste du HTML). Contexte
+   * ferme systematiquement apres usage.
+   */
+  async avecPage<T>(
+    url: string,
+    fn: (page: Page) => Promise<T>,
+    timeoutMs = 20000,
+  ): Promise<T | null> {
+    let context;
+    try {
+      const browser = await this.getBrowser();
+      context = await browser.newContext({ userAgent: USER_AGENT_NAVIGATEUR, locale: 'fr-FR' });
+      const page = await context.newPage();
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
+      return await fn(page);
     } catch (err) {
       this.logger.warn(`Navigateur : ${url} en echec (${(err as Error).message})`);
       return null;

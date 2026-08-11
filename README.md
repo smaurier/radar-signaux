@@ -177,6 +177,16 @@ de faisabilité du 01/08).
    RGAA respectés, audit Urbilog daté), Chaussea → non conforme, Castorama/Courrier
    International/booknode.com → absente (Courrier International vérifié manuellement :
    zéro mention « accessib* » nulle part sur le site, vrai négatif).
+6. **Scan axe-core** — sur les prospects déjà qualifiés (coûteux, réservé à ceux qui ont
+   passé les étapes précédentes). `@axe-core/playwright` sur la home, top 5 violations
+   triées par gravité (critical > serious > moderate > minor). **Ne remplace jamais la
+   déclaration RGAA du site comme preuve** — axe-core ne couvre qu'~30-50 % des
+   violations réelles (zéro faux positif, mais couverture partielle : clavier, ordre de
+   lecture, pertinence des alternatives restent hors de portée d'un scan automatisé).
+   Sert uniquement d'accroche technique concrète en prospection. **Validé en direct sur
+   caroll.com** (cohérent avec leur non-conformité déjà connue) : 9 violations, dont 43
+   liens sans texte discernable, 6 images sans alternative textuelle, 1 problème de
+   contraste — matière concrète pour une accroche, pas un chiffre abstrait.
 
 ## Roadmap
 
@@ -204,9 +214,14 @@ de faisabilité du 01/08).
 - [x] Détection de la déclaration d'accessibilité (suivi de lien découvert + chemins
       usuels + rendu navigateur forcé, 2 formulations de conformité reconnues, validé
       en direct sur 5 sites réels — Caroll et Chaussea non conformes, 3 sans déclaration)
-- [ ] Scan axe-core sur les prospects qualifiés (top violations = accroche technique)
+- [x] Scan axe-core sur les prospects qualifiés (top 5 violations triées par gravité,
+      validé en direct sur caroll.com : 9 violations dont 43 liens sans texte, 6 images
+      sans alt — jamais vendu comme un taux de conformité, cf limite dans le code)
 - [ ] Argumentaire juridique standardisé (régime EAA code conso, pas art. 47/Arcom —
       ne jamais confondre les seuils, cf étude de faisabilité)
+- [ ] Pipeline unifié (un seul endpoint qui enchaîne les 5 étapes pour un domaine et
+      persiste le résultat — chaque étape est testée isolément pour l'instant, comme
+      pour le mode Dev au démarrage)
 
 ## Étude de faisabilité
 

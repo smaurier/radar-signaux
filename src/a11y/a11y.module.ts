@@ -7,6 +7,8 @@ import { QualificationService } from './entreprises/qualification.service';
 import { QualificationController } from './entreprises/qualification.controller';
 import { DeclarationService } from './declaration/declaration.service';
 import { DeclarationController } from './declaration/declaration.controller';
+import { ScanService } from './scan/scan.service';
+import { ScanController } from './scan/scan.controller';
 import { NavigateurService } from './navigateur.service';
 import { PageFetcherService } from './page-fetcher.service';
 
@@ -16,12 +18,14 @@ import { PageFetcherService } from './page-fetcher.service';
     MentionsLegalesController,
     QualificationController,
     DeclarationController,
+    ScanController,
   ],
   providers: [
     DomainesService,
     MentionsLegalesService,
     QualificationService,
     DeclarationService,
+    ScanService,
     NavigateurService,
     PageFetcherService,
   ],
