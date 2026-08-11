@@ -148,8 +148,21 @@ de faisabilité du 01/08).
    automatique via navigateur headless (Playwright/Chromium) sur blocage uniquement
    (pas sur simple timeout, pour ne pas payer le coût du navigateur inutilement) —
    validé en direct : 2 sites précédemment bloqués débloqués avec le bon SIREN retrouvé.
-4. **À venir** : qualification CA/effectif/NAF via l'API Recherche d'entreprises (déjà
-   utilisée en mode Dev), détection de la déclaration d'accessibilité elle-même.
+4. **Qualification CA/effectif** — via l'API Recherche d'entreprises (déjà utilisée en
+   mode Dev), contre les seuils du régime EAA code conso (**> 10 salariés ET > 2 M€
+   CA** — jamais le seuil art. 47/Arcom à 250 M€, piège relevé dans l'étude de
+   faisabilité). Statut `donnees_indisponibles` distinct quand le CA est confidentiel
+   (fréquent pour les PME/ETI, cf étude) plutôt que de conclure à tort « sous le seuil ».
+   **Garde-fou de cohérence critique, né d'un vrai faux positif le 11/08** : le SIREN
+   extrait à l'étape précédente peut appartenir à une tout autre entreprise (page
+   bloquée par un WAF, contenu tiers capté par erreur au lieu du vrai contenu — constaté
+   en direct sur caroll.com, où une regex RCS trop stricte a fait rater le vrai SIREN de
+   Caroll et un fallback a récupéré celui de... Salesforce France). Le nom d'entreprise
+   trouvé est comparé au domaine (normalisé, présence en sous-chaîne) ; en cas
+   d'incohérence, statut forcé à `suspect` quels que soient CA/effectif — des chiffres
+   attachés à la mauvaise entreprise ne valent rien et ne doivent jamais atterrir dans
+   une liste de prospection sans review.
+5. **À venir** : détection de la déclaration d'accessibilité elle-même.
 
 ## Roadmap
 
@@ -171,10 +184,13 @@ de faisabilité du 01/08).
 - [x] Sourcing des domaines (CrUX top lists FR)
 - [x] Extraction du SIREN depuis les mentions légales, avec repli navigateur headless
       sur blocage anti-bot (validé en direct, ~40 % de blocage sur fetch() simple)
-- [ ] Qualification CA/effectif/NAF (API Recherche d'entreprises, filtre régime EAA :
-      >10 salariés et >2M€ CA)
+- [x] Qualification CA/effectif/NAF (API Recherche d'entreprises, filtre régime EAA :
+      >10 salariés et >2M€ CA) + garde-fou de cohérence nom/domaine (cf faux positif
+      Caroll/Salesforce du 11/08)
 - [ ] Détection de la déclaration d'accessibilité (regex sur home + chemins usuels +
-      footer + CGV/mentions légales, statut DECLARATION_TROUVEE/ABSENTE/INDETERMINE)
+      footer + CGV/mentions légales, statut DECLARATION_TROUVEE/ABSENTE/INDETERMINE) —
+      **pas encore fait : on ne sait pas encore si Caroll (ou tout autre site testé) a
+      une déclaration ou non**
 - [ ] Scan axe-core sur les prospects qualifiés (top violations = accroche technique)
 - [ ] Argumentaire juridique standardisé (régime EAA code conso, pas art. 47/Arcom —
       ne jamais confondre les seuils, cf étude de faisabilité)

@@ -174,7 +174,14 @@ export class MentionsLegalesService {
     const siretMatch = texte.match(/SIRET\s*:?\s*(\d{3}[\s.]?\d{3}[\s.]?\d{3}[\s.]?\d{5})\b/i);
     if (siretMatch) return siretMatch[1].replace(/\D/g, '').slice(0, 9);
 
-    const rcsMatch = texte.match(/RCS\s+[A-ZÀ-Ÿa-zà-ÿ\s\-']{2,30}\s(\d{3}[\s.]?\d{3}[\s.]?\d{3})\b/);
+    // filler large (n'importe quel caractere, y compris "n°", tirets, etc.)
+    // plutot qu'une classe de caracteres etroite : la premiere version
+    // ("RCS de SAINT-MALO sous le n° 582 001 707") a rate le vrai SIREN de
+    // Caroll faute de gerer "n°" -- constate en direct le 11/08, avec un
+    // faux positif dangereux en consequence (SIREN d'une tout autre societe
+    // capte plus loin dans le pipeline). Lazy pour s'arreter au premier
+    // groupe de 9 chiffres rencontre, pas un plus lointain sans rapport.
+    const rcsMatch = texte.match(/RCS[\s\S]{0,60}?(\d{3}[\s.]?\d{3}[\s.]?\d{3})\b/i);
     if (rcsMatch) return rcsMatch[1].replace(/\D/g, '');
 
     return null;
