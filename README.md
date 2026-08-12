@@ -150,14 +150,23 @@ de faisabilité du 01/08).
    le fichier réel de juillet 2026. Le fichier du mois en cours n'existe pas encore au
    moment de la collecte (retard de publication d'~1 mois) : repli automatique sur les
    mois précédents.
-2. **Extraction du SIREN** — cherche un lien « mentions légales » dans le HTML de la
+2. **robots.txt respecté** — vérifié avant tout fetch (direct et navigateur headless), sur
+   toutes les étapes (SIREN, déclaration, scan). Un `Disallow` est traité avec la même
+   sémantique qu'un blocage anti-bot (jamais confondu avec « rien trouvé »). Absence ou
+   inaccessibilité du fichier = autorisé par défaut (convention standard, RFC 9309).
+   Validé en direct sur un vrai fichier avec règles (`lemonde.fr` : chemin interdit
+   correctement bloqué, `Allow` explicite correctement prioritaire sur un `Disallow`
+   englobant, 403 sur le fichier lui-même correctement traité comme "autorisé par
+   défaut"). Condition explicitement citée par la fiche CNIL du 19/06/2025 sur le
+   scraping de données publiques.
+3. **Extraction du SIREN** — cherche un lien « mentions légales » dans le HTML de la
    home (priorité au mot dans l'URL elle-même, plus robuste qu'au texte visible du
    lien, qui peut être mal encodé ou enveloppé dans des balises imbriquées), sinon
    essaie des chemins usuels. Motif SIREN/SIRET/RCS cherché sur la page trouvée.
    **Piège d'encodage réel rencontré** : certains sites ne sont pas servis en UTF-8
    propre, un accent (« légales ») devient un caractère de remplacement — les regex
    utilisent un joker plutôt que de deviner l'encodage exact.
-3. **Anti-bot, constaté en direct** — sur un échantillon test de 10 domaines réels,
+4. **Anti-bot, constaté en direct** — sur un échantillon test de 10 domaines réels,
    ~40 % ont bloqué le `fetch()` simple (HTTP 403). Diagnostic confirmé : ce n'est pas
    le User-Agent (curl avec le même UA passait), c'est le **fingerprinting TLS/HTTP**
    du client Node (Datadome et équivalents, très répandus sur l'e-commerce FR). Un
@@ -166,7 +175,7 @@ de faisabilité du 01/08).
    automatique via navigateur headless (Playwright/Chromium) sur blocage uniquement
    (pas sur simple timeout, pour ne pas payer le coût du navigateur inutilement) —
    validé en direct : 2 sites précédemment bloqués débloqués avec le bon SIREN retrouvé.
-4. **Qualification CA/effectif** — via l'API Recherche d'entreprises (déjà utilisée en
+5. **Qualification CA/effectif** — via l'API Recherche d'entreprises (déjà utilisée en
    mode Dev), contre les seuils du régime EAA code conso (**> 10 salariés ET > 2 M€
    CA** — jamais le seuil art. 47/Arcom à 250 M€, piège relevé dans l'étude de
    faisabilité). Statut `donnees_indisponibles` distinct quand le CA est confidentiel
@@ -180,7 +189,7 @@ de faisabilité du 01/08).
    d'incohérence, statut forcé à `suspect` quels que soient CA/effectif — des chiffres
    attachés à la mauvaise entreprise ne valent rien et ne doivent jamais atterrir dans
    une liste de prospection sans review.
-5. **Détection de la déclaration d'accessibilité** — cherche le texte de conformité RGAA
+6. **Détection de la déclaration d'accessibilité** — cherche le texte de conformité RGAA
    sur la home, suit un lien « accessibilité » découvert dans la page (même mécanisme
    que pour les mentions légales — nécessaire : chaque site nomme sa page différemment,
    `/fr_fr/accessibilite-numerique` chez Caroll par exemple, absent de toute liste de
@@ -195,7 +204,7 @@ de faisabilité du 01/08).
    RGAA respectés, audit Urbilog daté), Chaussea → non conforme, Castorama/Courrier
    International/booknode.com → absente (Courrier International vérifié manuellement :
    zéro mention « accessib* » nulle part sur le site, vrai négatif).
-6. **Scan axe-core** — sur les prospects déjà qualifiés (coûteux, réservé à ceux qui ont
+7. **Scan axe-core** — sur les prospects déjà qualifiés (coûteux, réservé à ceux qui ont
    passé les étapes précédentes). `@axe-core/playwright` sur la home, top 5 violations
    triées par gravité (critical > serious > moderate > minor). **Ne remplace jamais la
    déclaration RGAA du site comme preuve** — axe-core ne couvre qu'~30-50 % des
@@ -205,7 +214,7 @@ de faisabilité du 01/08).
    caroll.com** (cohérent avec leur non-conformité déjà connue) : 9 violations, dont 43
    liens sans texte discernable, 6 images sans alternative textuelle, 1 problème de
    contraste — matière concrète pour une accroche, pas un chiffre abstrait.
-7. **Argumentaire juridique** — une base factuelle par prospect (pas un email rédigé) :
+8. **Argumentaire juridique** — une base factuelle par prospect (pas un email rédigé) :
    texte exact, sanctions réelles, autorité compétente, faits constatés, top violations.
    **Distinction de régime automatique selon le CA réel**, pas seulement celui du
    prospect qualifié minimum : nos prospects sont filtrés par un *plancher* (> 2 M€ CA),

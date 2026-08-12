@@ -18,6 +18,7 @@ import { ArgumentaireController } from './argumentaire/argumentaire.controller';
 import { A11yStorageService } from './storage/a11y-storage.service';
 import { NavigateurService } from './navigateur.service';
 import { PageFetcherService } from './page-fetcher.service';
+import { RobotsService } from './robots.service';
 
 @Module({
   controllers: [
@@ -42,6 +43,7 @@ import { PageFetcherService } from './page-fetcher.service';
     A11yStorageService,
     NavigateurService,
     PageFetcherService,
+    RobotsService,
   ],
 })
 export class A11yModule {}

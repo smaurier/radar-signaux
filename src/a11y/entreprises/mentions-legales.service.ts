@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PageFetcherService } from '../page-fetcher.service';
 
-// TODO : respect de robots.txt pas encore implemente -- a faire avant tout
-// passage a l'echelle (>quelques centaines de domaines). Cf fiche CNIL
-// 19/06/2025 sur le scraping de donnees publiques.
+// robots.txt verifie en amont par PageFetcherService (cf RobotsService,
+// ajoute le 11/08) -- cf fiche CNIL 19/06/2025 sur le scraping de
+// donnees publiques, respect de robots.txt = condition favorable.
 
 const CHEMINS_USUELS = [
   '/mentions-legales',

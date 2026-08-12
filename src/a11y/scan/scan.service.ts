@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import AxeBuilder from '@axe-core/playwright';
 import { NavigateurService } from '../navigateur.service';
+import { RobotsService } from '../robots.service';
 
 // ordre de priorite pour trier les violations : critique d'abord
 const POIDS_IMPACT: Record<string, number> = { critical: 4, serious: 3, moderate: 2, minor: 1 };
@@ -41,10 +42,17 @@ export interface ResultatScan {
 export class ScanService {
   private readonly logger = new Logger(ScanService.name);
 
-  constructor(private readonly navigateur: NavigateurService) {}
+  constructor(
+    private readonly navigateur: NavigateurService,
+    private readonly robots: RobotsService,
+  ) {}
 
   async scanner(domaine: string): Promise<ResultatScan> {
     const url = `https://${domaine}`;
+
+    if (!(await this.robots.estAutorise(url))) {
+      return { url, totalViolations: 0, topViolations: [], erreur: 'robots.txt interdit ce scan' };
+    }
 
     const resultat = await this.navigateur.avecPage(url, async (page) => {
       const analyse = await new AxeBuilder({ page }).analyze();
