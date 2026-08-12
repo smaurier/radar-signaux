@@ -33,6 +33,21 @@ doivent jamais devenir publics.
 NestJS + TypeScript, SQLite local (`better-sqlite3`) pour la déduplication entre les runs,
 `@nestjs/schedule` pour le cron. Zéro dépendance payante au MVP.
 
+## Tests
+
+```bash
+npm test
+```
+
+Tout le projet a été construit en délégation (pas de TDD), mais chaque bug réel découvert
+en testant en direct a été figé en test de non-régression plutôt qu'oublié une fois corrigé
+— la logique pure (regex d'extraction, décisions de statut/régime), pas les appels réseau
+externes. 35 tests couvrent notamment : la formulation narrative de déclaration RGAA qui
+avait fait rater Caroll, la regex RCS trop stricte qui avait renvoyé le SIREN de Salesforce
+à la place de celui de Caroll, le garde-fou de cohérence nom/domaine qui l'attrape quand
+même, la bascule de régime juridique EAA/art.47 selon le CA réel, et l'extraction sens/
+montant d'un acte INPI réel (Galeon).
+
 ## Démarrage
 
 ```bash
