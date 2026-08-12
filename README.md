@@ -69,6 +69,7 @@ curl "http://localhost:3000/a11y/prospects"  # prospects qualifiés + déclarati
 curl "http://localhost:3000/a11y/recent"     # tout ce qui a été traité, quelle que soit l'issue
 
 curl -X POST "http://localhost:3000/a11y/notifications/run"  # envoie le digest a11y (si prospects en attente)
+curl "http://localhost:3000/a11y/argumentaire?domaine=www.exemple.fr" # base factuelle pour un prospect deja traite
 ```
 
 ⚠️ Le rang CrUX n'est **pas continu** : les seules valeurs possibles sont 1000, 5000,
@@ -204,6 +205,19 @@ de faisabilité du 01/08).
    caroll.com** (cohérent avec leur non-conformité déjà connue) : 9 violations, dont 43
    liens sans texte discernable, 6 images sans alternative textuelle, 1 problème de
    contraste — matière concrète pour une accroche, pas un chiffre abstrait.
+7. **Argumentaire juridique** — une base factuelle par prospect (pas un email rédigé) :
+   texte exact, sanctions réelles, autorité compétente, faits constatés, top violations.
+   **Distinction de régime automatique selon le CA réel**, pas seulement celui du
+   prospect qualifié minimum : nos prospects sont filtrés par un *plancher* (> 2 M€ CA),
+   pas un plafond — une entreprise à CA > 250 M€ relève de l'article 47/Arcom (DGCCRF →
+   Arcom, sanctions et texte totalement différents), pas du régime EAA code conso.
+   **Reproduit l'erreur exacte du TJ de Lille** (05-06/05/2026, ApiDV/Droit Pluriel c.
+   Auchan E-Commerce, débouté pour avoir appliqué le mauvais seuil) si on ne fait pas
+   cette distinction — validé en direct : un CA fictif de 300 M€ bascule bien vers
+   l'avertissement art. 47/Arcom au lieu de générer un texte EAA erroné. Rappel
+   systématique dans le texte généré : ne jamais citer du 25 000 €/50 000 € (mauvais
+   régime) à un prospect EAA, la DGCCRF enquête aussi sur la loyauté des prestataires
+   d'audit — relecture humaine obligatoire avant tout envoi.
 
 ## Roadmap
 
@@ -239,8 +253,9 @@ de faisabilité du 01/08).
       domaine sort de la course — pas de scan axe-core gaspillé sur un mauvais candidat)
 - [x] Cron automatique (`@Cron('45 7 * * *')` sur le pipeline, 15 domaines/jour) +
       digest email quotidien (8h, réutilise Gmail SMTP déjà configuré pour le mode Dev)
-- [ ] Argumentaire juridique standardisé (régime EAA code conso, pas art. 47/Arcom —
-      ne jamais confondre les seuils, cf étude de faisabilité)
+- [x] Argumentaire juridique standardisé (bascule automatique de régime selon le CA réel
+      — EAA code conso en dessous de 250 M€, avertissement art. 47/Arcom au-dessus,
+      jamais un texte au mauvais régime — validé en direct sur un cas fictif >250M€)
 
 ## Étude de faisabilité
 
