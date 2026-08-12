@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { StorageService } from '../storage/storage.service';
 import { InpiCompanyResponse } from './inpi.types';
 import { INPI_BASE_URL, InpiAuthService } from './inpi-auth.service';
@@ -76,6 +77,16 @@ export class InpiService {
     if (candidats.length === 0) return null;
     const prioritaire = candidats.find((c) => /montantCapital|capitalSocial/i.test(c.path));
     return prioritaire ?? candidats[0];
+  }
+
+  // 7h10, apres l'enrichissement (7h05) -- OUBLIE lors de la construction
+  // initiale (11/08) : InpiService et InpiActesService n'avaient AUCUN
+  // cron, ce module ne tournait donc jamais automatiquement malgre son
+  // integration dans le README/pipeline documente. Trouve en rejouant la
+  // sequence complete du cron manuellement.
+  @Cron('10 7 * * *')
+  async runDaily(): Promise<void> {
+    await this.run();
   }
 
   /** Qualifie un lot de signaux non encore verifies. Retourne le nombre traite. */

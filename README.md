@@ -57,9 +57,26 @@ npm run start                     # démarre l'API sur http://localhost:3000
 ```
 
 Les crons quotidiens se déclenchent automatiquement une fois l'app démarrée
-(`ScheduleModule`) : mode Dev à 7h (détection → enrichissement 7h05 → qualification INPI
-→ actes → presse 7h15 → digest 7h30), mode a11y à 7h45 (pipeline sur 15 nouveaux
-domaines CrUX) → digest a11y à 8h. Pour tester sans attendre le cron :
+(`ScheduleModule`) : mode Dev 7h00 détection → 7h05 enrichissement NAF → 7h10 qualification
+INPI (capital) → 7h15 confirmation presse → 7h20 lecture d'actes (sens/montant) → 7h30
+digest email. Mode a11y : 7h45 pipeline (15 nouveaux domaines CrUX) → 8h00 digest.
+
+⚠️ **Bug réel trouvé le 11/08 (soir) en rejouant la séquence manuellement** : la
+qualification INPI et la lecture d'actes avaient été construites, testées et documentées
+comme étapes du pipeline, mais **n'avaient aucun `@Cron`** — elles ne tournaient donc
+jamais automatiquement, seulement via leurs endpoints POST manuels. Corrigé (7h10/7h20
+ci-dessus). Sans avoir rejoué la séquence complète en une fois, ce trou serait resté
+invisible indéfiniment : chaque étape testée isolément avait l'air de fonctionner.
+
+⚠️ **Hébergement actuel : best-effort, en local.** `@nestjs/schedule` ne fonctionne que
+tant que le process Node tourne — poste éteint = cron du jour simplement zappé, **aucun
+rattrapage automatique**. Pas grave en soi (fenêtre glissante + dédup absorbent les jours
+manqués au run suivant), mais rien n'est garanti tant que ça tourne sur un poste qui
+s'éteint. Décision assumée le 11/08 : pas d'investissement dans un vrai déploiement
+(VPS/GitHub Actions, prévu dans la conception d'origine) tant que ce n'est pas nécessaire
+— le sujet reviendra naturellement si besoin d'une exécution garantie.
+
+Pour tester sans attendre le cron :
 
 ```bash
 curl -X POST http://localhost:3000/bodacc/run          # déclenche une collecte immédiate

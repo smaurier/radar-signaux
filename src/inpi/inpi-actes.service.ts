@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { PDFParse } from 'pdf-parse';
 import { StorageService } from '../storage/storage.service';
 import { INPI_BASE_URL, InpiAuthService } from './inpi-auth.service';
@@ -42,6 +43,15 @@ export class InpiActesService {
     private readonly storage: StorageService,
     private readonly auth: InpiAuthService,
   ) {}
+
+  // 7h20, apres la qualification INPI (7h10) -- laisse plus de marge que
+  // les autres etapes (telechargement PDF + parsing, plus lent). Meme
+  // oubli que InpiService : aucun cron avant le 11/08 (soir), trouve en
+  // rejouant la sequence complete manuellement.
+  @Cron('20 7 * * *')
+  async runDaily(): Promise<void> {
+    await this.run();
+  }
 
   async run(): Promise<number> {
     const candidats = this.storage.listSignauxSansActeLu();
