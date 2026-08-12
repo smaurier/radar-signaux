@@ -256,6 +256,49 @@ de faisabilité du 01/08).
 - [x] Argumentaire juridique standardisé (bascule automatique de régime selon le CA réel
       — EAA code conso en dessous de 250 M€, avertissement art. 47/Arcom au-dessus,
       jamais un texte au mauvais régime — validé en direct sur un cas fictif >250M€)
+- [x] Serveur MCP en lecture seule (`get_signals`, `get_leads`, `search_company`,
+      `get_argumentaire`) — transport stdio, pas d'auth (process local), validé en direct
+      (handshake + 4 tools testés avec de vraies données)
+
+## Serveur MCP (lecture seule)
+
+Expose le radar à un client MCP (ex. Claude Code) sans exposer de service réseau : le
+process est lancé à la demande par le client, lit directement le SQLite local en lecture
+seule. Le radar reste une app autonome (tourne même sans MCP) ; Synapse (ou tout autre
+client) n'est qu'un lecteur de plus.
+
+```bash
+npm run mcp   # lance le serveur en stdio (attend un client MCP sur stdin/stdout)
+```
+
+Configuration côté client (ex. `.mcp.json`, chemins absolus — jamais commité, spécifique
+à chaque poste) :
+
+```json
+{
+  "mcpServers": {
+    "radar-signaux": {
+      "command": "npx",
+      "args": ["tsx", "/chemin/absolu/vers/radar-signaux/src/mcp/server.ts"],
+      "env": { "RADAR_DB_PATH": "/chemin/absolu/vers/radar-signaux/data/radar.sqlite" }
+    }
+  }
+}
+```
+
+4 tools, tous en lecture seule :
+
+| Tool | Rôle |
+|---|---|
+| `get_signals` | Signaux BODACC récents (mode Dev), avec enrichissement quand disponible |
+| `get_leads` | Prospects a11y qualifiés (>10 salariés, >2M€ CA, déclaration non conforme/absente) |
+| `search_company` | Recherche par nom/SIREN/domaine dans les deux modes |
+| `get_argumentaire` | Base factuelle juridique+technique pour un prospect a11y déjà traité |
+
+**Choix de transport (stdio, pas HTTP+token)** : le process est lancé localement par le
+client à la demande, pas de serveur permanent à sécuriser. À reconsidérer seulement si un
+client doit un jour appeler le radar depuis autre chose qu'une session locale (ex.
+routine cloud) — pas le cas aujourd'hui.
 
 ## Étude de faisabilité
 
