@@ -46,4 +46,24 @@ describe('DeclarationService', () => {
     // direct le 11/08 sur d'autres pages du meme type de site)
     expect(chercher('Accessibilit� : non conforme')).toBe('non_conforme');
   });
+
+  it('reconnait le gabarit officiel DINUM "en conformite totale avec le RGAA" (ajoutee 13/08)', () => {
+    expect(chercher('État de conformité : Exemple est en conformité totale avec le RGAA.')).toBe(
+      'conforme',
+    );
+  });
+
+  it('reconnait le gabarit officiel DINUM "en conformite partielle avec le referentiel" (ajoutee 13/08)', () => {
+    expect(
+      chercher('Exemple est en conformité partielle avec le référentiel général.'),
+    ).toBe('partiel');
+  });
+
+  it('reconnait la formulation negative "n\'est pas conforme au RGAA" (ajoutee 13/08)', () => {
+    expect(chercher("Le site Exemple n'est pas conforme au RGAA.")).toBe('non_conforme');
+  });
+
+  it('reconnait la formulation narrative avec preposition "avec" (elargie 13/08)', () => {
+    expect(chercher('Le site est non conforme avec le RGAA.')).toBe('non_conforme');
+  });
 });

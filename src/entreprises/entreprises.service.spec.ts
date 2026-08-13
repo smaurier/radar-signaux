@@ -22,4 +22,8 @@ describe('isSecteurTechProbable', () => {
   it('rejette si ni NAF ni section fournis', () => {
     expect(isSecteurTechProbable(null, null)).toBe(false);
   });
+
+  it('reconnait un NAF telecom (61) meme sans section fournie (ajoute 13/08)', () => {
+    expect(isSecteurTechProbable('61.10Z', null)).toBe(true);
+  });
 });

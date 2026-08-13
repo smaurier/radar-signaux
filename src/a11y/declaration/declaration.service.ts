@@ -129,32 +129,59 @@ export class DeclarationService {
   }
 
   /**
-   * Deux formulations reelles constatees le 11/08 (une seule ne suffit
-   * pas) :
+   * Quatre formulations reconnues (deux constatees en direct le 11/08, deux
+   * ajoutees le 13/08 pour elargir la couverture -- non verifiees sur un
+   * site reel, cf limite ci-dessous) :
    * 1. "Accessibilite : totalement/partiellement/non conforme" (mention
-   *    normalisee attendue en pied de page RGAA/art.47).
+   *    normalisee attendue en pied de page RGAA/art.47). Constatee.
    * 2. "le site de X est {mot} conforme au Referentiel/RGAA" (formulation
-   *    de la page de declaration elle-meme -- constate sur caroll.com,
+   *    narrative de la page de declaration -- constatee sur caroll.com,
    *    groupe Beaumanoir : "le site de Caroll est non conforme au
    *    Referentiel General d'Amelioration de l'Accessibilite (RGAA)").
-   * Le point remplace les accents (encodage non garanti UTF-8, meme
-   * raison que dans mentions-legales.service.ts).
+   *    Preposition elargie a "avec"/"a" en plus de "au/aux" le 13/08.
+   * 3. "est en conformite totale/partielle avec le RGAA" -- gabarit
+   *    officiel du modele de declaration DINUM (accord feminin different
+   *    des formulations 1/2 : "totale"/"partielle", pas "totalement"/
+   *    "partiellement"). Ajoutee le 13/08, JAMAIS rencontree en direct sur
+   *    un site reel -- a confirmer/corriger au premier cas concret.
+   * 4. "n'est pas conforme au/avec le RGAA" -- variante negative sans le
+   *    mot "non" colle a "conforme". Ajoutee le 13/08, meme limite que 3.
+   * Le point remplace les accents (encodage non garanti UTF-8, meme raison
+   * que dans mentions-legales.service.ts -- meme si page-fetcher.service.ts
+   * decode desormais le bon charset depuis le 13/08, ce joker reste en
+   * defense-en-profondeur pour les sites mal configures).
    */
   private chercherDeclaration(html: string): StatutDeclaration | null {
     const texte = html.replace(/<[^>]+>/g, ' ');
+    const referentiel = '(?:r[ée]f[ée]rentiel|RGAA)';
+    const preposition = '(?:au|aux|avec|[àa])';
 
     const match1 = texte.match(
       /accessibilit.\s*:?\s*(totalement|partiellement|non)\s*conforme/i,
     );
     const match2 = texte.match(
-      /(totalement|partiellement|non)\s+conforme\s+(?:au|aux)\s+(?:r.f.rentiel|RGAA)/i,
+      new RegExp(`(totalement|partiellement|non)\\s+conforme\\s+${preposition}\\s+(?:le\\s+)?${referentiel}`, 'i'),
     );
     const match = match1 ?? match2;
-    if (!match) return null;
+    if (match) {
+      const mot = match[1].toLowerCase();
+      if (mot === 'totalement') return 'conforme';
+      if (mot === 'partiellement') return 'partiel';
+      return 'non_conforme';
+    }
 
-    const mot = match[1].toLowerCase();
-    if (mot === 'totalement') return 'conforme';
-    if (mot === 'partiellement') return 'partiel';
-    return 'non_conforme';
+    const match3 = texte.match(
+      new RegExp(`en\\s+conformit[ée]\\s+(totale|partielle)\\s+${preposition}\\s+(?:le\\s+)?${referentiel}`, 'i'),
+    );
+    if (match3) {
+      return match3[1].toLowerCase() === 'totale' ? 'conforme' : 'partiel';
+    }
+
+    const match4 = new RegExp(`n['’]est pas conforme\\s+${preposition}\\s+(?:le\\s+)?${referentiel}`, 'i').test(
+      texte,
+    );
+    if (match4) return 'non_conforme';
+
+    return null;
   }
 }

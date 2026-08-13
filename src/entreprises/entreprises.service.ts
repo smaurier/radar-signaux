@@ -83,6 +83,19 @@ export class EntreprisesService {
  * un signal) : section J (info/communication) ou NAF de programmation,
  * edition logicielle, R&D. A verifier manuellement -- ce n'est qu'un
  * indice, pas une classification fiable (cf le faux "PME locale" du 11/08).
+ *
+ * **Note du 13/08** : les prefixes 58.2/61/62/63 sont deja tous couverts
+ * par `sectionActivite === 'J'` (section entiere "Information et
+ * communication") -- ils ne servent que de repli quand l'API ne renvoie
+ * pas la section (champ parfois absent), pas une redondance a supprimer.
+ * Ajout de 61 (Telecommunications) le 13/08, absent jusque-la de la liste
+ * de repli alors qu'il fait partie de la meme section J.
+ *
+ * **Reste une vraie limite, pas resolue ici** : aucun signal reel n'a
+ * encore ete signale comme mal classe (le seul cas connu, Galeon, EST
+ * correctement tague grace au NAF 62.01Z) -- affiner davantage demanderait
+ * des faux negatifs concrets constates a l'usage, pas une supposition a
+ * vide. Cf backlog [[project_radar_signaux]].
  */
 export function isSecteurTechProbable(
   nafCode: string | null | undefined,
@@ -90,6 +103,6 @@ export function isSecteurTechProbable(
 ): boolean {
   if (sectionActivite === 'J') return true;
   if (!nafCode) return false;
-  const prefixesTech = ['62', '63', '58.2', '26', '72'];
+  const prefixesTech = ['58.2', '61', '62', '63', '26', '72'];
   return prefixesTech.some((prefixe) => nafCode.startsWith(prefixe));
 }

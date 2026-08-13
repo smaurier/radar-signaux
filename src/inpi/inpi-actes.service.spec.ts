@@ -55,4 +55,27 @@ describe('InpiActesService', () => {
     expect(resultat.capitalApres).toBeNull();
     expect(resultat.erreur).not.toBeNull();
   });
+
+  it('extrait avant/apres sur la formulation "porte de X euros a Y euros" (ajoutee 13/08)', () => {
+    const texte = 'Le capital social est porté de 10.000 euros à 15.000 euros.';
+    const resultat = parserCapital(texte);
+    expect(resultat.sens).toBe('hausse');
+    expect(resultat.capitalAvant).toBeCloseTo(10000);
+    expect(resultat.capitalApres).toBeCloseTo(15000);
+  });
+
+  it('extrait avant/apres sur la formulation "reduit de X euros a Y euros" (ajoutee 13/08)', () => {
+    const texte = 'Le capital social est réduit de 20.000 euros à 12.000 euros.';
+    const resultat = parserCapital(texte);
+    expect(resultat.sens).toBe('baisse');
+    expect(resultat.capitalAvant).toBeCloseTo(20000);
+    expect(resultat.capitalApres).toBeCloseTo(12000);
+  });
+
+  it('extrait le capital final sur la formulation "fixe a la somme de Y euros" (ajoutee 13/08)', () => {
+    const texte = 'Augmentation de Capital. Le capital social est fixé à la somme de 50.000 euros.';
+    const resultat = parserCapital(texte);
+    expect(resultat.sens).toBe('hausse');
+    expect(resultat.capitalApres).toBeCloseTo(50000);
+  });
 });

@@ -164,21 +164,56 @@ export class InpiActesService {
    */
   private parserCapital(texte: string): CapitalParse {
     const sensMatch = texte.match(/(Augmentation|R[ée]duction) de Capital/i);
-    const sens: 'hausse' | 'baisse' | null = sensMatch
+    let sens: 'hausse' | 'baisse' | null = sensMatch
       ? /augmentation/i.test(sensMatch[0])
         ? 'hausse'
         : 'baisse'
       : null;
 
-    // capital d'origine : mentionne dans le preambule ("... au capital de X euros")
-    const ancienMatch = texte.match(/au capital de\s+([\d.,\s]+?)\s*euros?/i);
-    // capital final : formulation "s'eleve desormais a Y euros" (apostrophe typographique possible)
-    const nouveauMatch = texte.match(
-      /s['’]?[ée]l[èe]ve d[ée]sormais [àa]\s+([\d.,\s]+?)\s*euros?/i,
-    );
+    let capitalAvant: number | null = null;
+    let capitalApres: number | null = null;
 
-    const capitalAvant = ancienMatch ? this.parseNombreFrancais(ancienMatch[1]) : null;
-    const capitalApres = nouveauMatch ? this.parseNombreFrancais(nouveauMatch[1]) : null;
+    // Formulation la plus repandue en pratique dans les PV d'AG : "le
+    // capital social ... est porte de X euros a Y euros" (augmentation) /
+    // "reduit de X euros a Y euros" (reduction) -- capture les deux
+    // montants en un seul motif. Ajoutee le 13/08 : les motifs precedents
+    // (preambule "au capital de" + corps "s'eleve desormais a") n'avaient
+    // ete calibres que sur le cas Galeon et donnaient ~1% de reussite sur
+    // le montant exact (177 signaux reels, cf README). Cette formulation
+    // "porte de/a" est le standard le plus courant chez les cabinets, donc
+    // essayee en priorite -- mais reste une extension par pattern connu
+    // du jargon juridique francais, PAS reverifiee sur un corpus reel
+    // comme le cas Galeon (limite honnetement documentee ici).
+    const porteMatch = texte.match(
+      /port[ée]e?\s+de\s+([\d.,\s]+?)\s*euros?\s+[àa]\s+([\d.,\s]+?)\s*euros?/i,
+    );
+    const reduiteMatch = texte.match(
+      /r[ée]duite?\s+de\s+([\d.,\s]+?)\s*euros?\s+[àa]\s+([\d.,\s]+?)\s*euros?/i,
+    );
+    if (porteMatch) {
+      capitalAvant = this.parseNombreFrancais(porteMatch[1]);
+      capitalApres = this.parseNombreFrancais(porteMatch[2]);
+      if (!sens) sens = 'hausse';
+    } else if (reduiteMatch) {
+      capitalAvant = this.parseNombreFrancais(reduiteMatch[1]);
+      capitalApres = this.parseNombreFrancais(reduiteMatch[2]);
+      if (!sens) sens = 'baisse';
+    }
+
+    // Repli : formulations separees deja calibrees (cas Galeon) -- ne
+    // complete que ce qui manque encore apres le motif "porte de/a".
+    if (capitalAvant === null) {
+      const ancienMatch = texte.match(/au capital de\s+([\d.,\s]+?)\s*euros?/i);
+      capitalAvant = ancienMatch ? this.parseNombreFrancais(ancienMatch[1]) : null;
+    }
+    if (capitalApres === null) {
+      // "s'eleve desormais a Y euros" (apostrophe typographique possible),
+      // sinon "fixe a la somme de Y euros" (autre formulation courante).
+      const nouveauMatch =
+        texte.match(/s['’]?[ée]l[èe]ve d[ée]sormais [àa]\s+([\d.,\s]+?)\s*euros?/i) ??
+        texte.match(/fix[ée]e?\s+[àa]\s+la somme de\s+([\d.,\s]+?)\s*euros?/i);
+      capitalApres = nouveauMatch ? this.parseNombreFrancais(nouveauMatch[1]) : null;
+    }
 
     const erreur =
       !sens && capitalAvant === null && capitalApres === null
