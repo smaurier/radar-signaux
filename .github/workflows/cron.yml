@@ -1,0 +1,75 @@
+name: Cron quotidien
+
+# 7h Paris. Le champ "timezone" (dispo depuis 03/2026) evite le calcul
+# manuel UTC/CEST -- si jamais il se comporte mal (feature recente,
+# rapporte comme instable dans certaines discussions), repli en dur :
+# heure d'ete Paris = UTC+2, donc '0 5 * * *' sans le champ timezone.
+on:
+  schedule:
+    - cron: '0 7 * * *'
+      timezone: Europe/Paris
+  workflow_dispatch: {} # declenchement manuel pour tester sans attendre le planning
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout radar-signaux (code)
+        uses: actions/checkout@v4
+
+      - name: Checkout radar-signaux-data (donnees privees)
+        uses: actions/checkout@v4
+        with:
+          repository: smaurier/radar-signaux-data
+          token: ${{ secrets.DATA_REPO_TOKEN }}
+          path: data-repo
+
+      - name: Positionner la base SQLite du run precedent (si elle existe)
+        run: |
+          mkdir -p data
+          if [ -f data-repo/radar.sqlite ]; then
+            cp data-repo/radar.sqlite data/radar.sqlite
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Installer les dependances
+        run: npm ci
+
+      - name: Installer Chromium (repli anti-bot + scan axe-core)
+        run: npx playwright install --with-deps chromium
+
+      - name: Builder (nest build)
+        # IMPORTANT : pas "npx tsx src/cron/run-once.ts" ici. Bug reel
+        # constate en local le 11-12/08 : tsx (esbuild) n'emet pas les
+        # metadonnees de decorateurs dont NestJS a besoin pour l'injection
+        # de dependances par reflexion -- chaque service recevait
+        # this.storage === undefined, silencieusement, aucune erreur au
+        # demarrage. Le build officiel (nest build, meme pipeline que
+        # start:prod) fonctionne correctement.
+        run: npm run build
+
+      - name: Executer la sequence quotidienne (sequentielle, pas de creneaux)
+        env:
+          RADAR_DB_PATH: ${{ github.workspace }}/data/radar.sqlite
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          RADAR_NOTIFY_TO: ${{ secrets.RADAR_NOTIFY_TO }}
+          INPI_USERNAME: ${{ secrets.INPI_USERNAME }}
+          INPI_PASSWORD: ${{ secrets.INPI_PASSWORD }}
+        run: node dist/cron/run-once.js
+
+      - name: Persister la base mise a jour dans le repo de donnees
+        run: |
+          cp data/radar.sqlite data-repo/radar.sqlite
+          cd data-repo
+          git config user.name "radar-signaux-bot"
+          git config user.email "radar-signaux-bot@users.noreply.github.com"
+          git add radar.sqlite
+          git diff --cached --quiet || git commit -m "chore: mise a jour donnees $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push

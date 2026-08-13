@@ -68,13 +68,13 @@ jamais automatiquement, seulement via leurs endpoints POST manuels. Corrigé (7h
 ci-dessus). Sans avoir rejoué la séquence complète en une fois, ce trou serait resté
 invisible indéfiniment : chaque étape testée isolément avait l'air de fonctionner.
 
-⚠️ **Hébergement actuel : best-effort, en local.** `@nestjs/schedule` ne fonctionne que
-tant que le process Node tourne — poste éteint = cron du jour simplement zappé, **aucun
-rattrapage automatique**. Pas grave en soi (fenêtre glissante + dédup absorbent les jours
-manqués au run suivant), mais rien n'est garanti tant que ça tourne sur un poste qui
-s'éteint. Décision assumée le 11/08 : pas d'investissement dans un vrai déploiement
-(VPS/GitHub Actions, prévu dans la conception d'origine) tant que ce n'est pas nécessaire
-— le sujet reviendra naturellement si besoin d'une exécution garantie.
+✅ **Hébergement : GitHub Actions, planifié tous les jours à 7h Paris**, sans VPS
+(`.github/workflows/cron.yml`). Les crons `@nestjs/schedule` décrits ci-dessus décrivent
+la logique métier mais ne pilotent plus l'exécution planifiée réelle — celle-ci passe
+par un point d'entrée dédié (`src/cron/run-once.ts`) qui exécute toute la séquence une
+fois puis quitte, sans process persistant. Détail de l'architecture (repo de données
+séparé, secrets requis, piège `tsx`/injection de dépendances rencontré et corrigé) :
+[`docs/deploiement-github-actions.md`](docs/deploiement-github-actions.md).
 
 Pour tester sans attendre le cron :
 
@@ -272,8 +272,10 @@ de faisabilité du 01/08).
       ci-dessus, pas prioritaire à affiner pour l'instant)
 - [ ] Affiner l'heuristique « tech probable » avec l'usage (elle peut rater de vraies
       entreprises tech hors classification NAF standard)
-- [ ] Serveur MCP en lecture seule (`get_signals`, `search_company`) pour interroger le
+- [x] Serveur MCP en lecture seule (`get_signals`, `search_company`) pour interroger le
       radar depuis un autre outil
+- [x] Déploiement planifié sans VPS (GitHub Actions, cf
+      [`docs/deploiement-github-actions.md`](docs/deploiement-github-actions.md))
 
 ### Mode Freelance a11y — **priorité actuelle**, c'est le mode qui intéresse le plus Sylvain
 

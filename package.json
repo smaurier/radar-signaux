@@ -18,7 +18,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "mcp": "tsx src/mcp/server.ts"
+    "mcp": "tsx src/mcp/server.ts",
+    "cron:run": "node dist/cron/run-once.js"
   },
   "dependencies": {
     "@axe-core/playwright": "^4.13.0",
