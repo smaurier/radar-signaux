@@ -1,5 +1,9 @@
 # radar-signaux
 
+![NestJS](https://img.shields.io/badge/-NestJS-E0234E?style=flat-square&logo=nestjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/-TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Playwright](https://img.shields.io/badge/-Playwright-2EAD33?style=flat-square&logo=playwright&logoColor=white)
+
 Moteur de veille économique automatisée sur données ouvertes françaises (BODACC, INPI,
 presse spécialisée). Détecte des signaux faibles — ici, les levées de fonds potentielles —
 avant ou au moment de leur publication officielle.
