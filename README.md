@@ -1,5 +1,7 @@
 # radar-signaux
 
+![CI](https://github.com/smaurier/radar-signaux/actions/workflows/ci.yml/badge.svg)
+
 ![NestJS](https://img.shields.io/badge/-NestJS-E0234E?style=flat-square&logo=nestjs&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/-TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![Playwright](https://img.shields.io/badge/-Playwright-2EAD33?style=flat-square&logo=playwright&logoColor=white)
