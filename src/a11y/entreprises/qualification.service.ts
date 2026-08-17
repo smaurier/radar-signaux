@@ -1,5 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RechercheEntreprisesResponseA11y, RechercheEntreprisesResultA11y } from './qualification.types';
+import {
+  RechercheEntreprisesResponseA11y,
+  RechercheEntreprisesResultA11y,
+} from './qualification.types';
 
 const API_URL = 'https://recherche-entreprises.api.gouv.fr/search';
 
@@ -12,11 +15,26 @@ const SEUIL_CA = 2_000_000;
 // ">10 salaries" du regime EAA, approxime par inclusion (10 pile n'est pas
 // legalement ">10", mais la tranche ne distingue pas plus finement)
 const TRANCHES_ORDRE = [
-  '00', '01', '02', '03', '11', '12', '21', '22', '31', '32', '41', '42', '51', '52', '53',
+  '00',
+  '01',
+  '02',
+  '03',
+  '11',
+  '12',
+  '21',
+  '22',
+  '31',
+  '32',
+  '41',
+  '42',
+  '51',
+  '52',
+  '53',
 ];
 const SEUIL_TRANCHE = '11';
 
-export type StatutQualification = 'qualifie' | 'sous_seuil' | 'donnees_indisponibles' | 'suspect';
+export type StatutQualification =
+  'qualifie' | 'sous_seuil' | 'donnees_indisponibles' | 'suspect';
 
 export interface ResultatQualification {
   statut: StatutQualification;
@@ -55,7 +73,10 @@ export interface ResultatQualification {
 export class QualificationService {
   private readonly logger = new Logger(QualificationService.name);
 
-  async qualifier(siren: string, domaine?: string): Promise<ResultatQualification> {
+  async qualifier(
+    siren: string,
+    domaine?: string,
+  ): Promise<ResultatQualification> {
     const resultat = await this.chercherParSiren(siren);
     if (!resultat) {
       return {
@@ -72,7 +93,9 @@ export class QualificationService {
 
     const nomComplet = resultat.nom_complet ?? null;
     const coherentAvecDomaine =
-      domaine && nomComplet ? this.coherentAvecDomaine(nomComplet, domaine) : null;
+      domaine && nomComplet
+        ? this.coherentAvecDomaine(nomComplet, domaine)
+        : null;
 
     const trancheEffectif = resultat.tranche_effectif_salarie ?? null;
     const { ca, annee } = this.dernierCaConnu(resultat.finances);
@@ -120,17 +143,25 @@ export class QualificationService {
     if (coeurDomaine.length < 3) return true; // trop court pour juger sans faux positifs
 
     const nomNormalise = nomComplet.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    return nomNormalise.includes(coeurDomaine) || coeurDomaine.includes(nomNormalise);
+    return (
+      nomNormalise.includes(coeurDomaine) || coeurDomaine.includes(nomNormalise)
+    );
   }
 
-  private async chercherParSiren(siren: string): Promise<RechercheEntreprisesResultA11y | null> {
+  private async chercherParSiren(
+    siren: string,
+  ): Promise<RechercheEntreprisesResultA11y | null> {
     const params = new URLSearchParams({ q: siren });
     const response = await fetch(`${API_URL}?${params.toString()}`);
     if (!response.ok) {
-      throw new Error(`API Recherche d'entreprises en echec (${response.status})`);
+      throw new Error(
+        `API Recherche d'entreprises en echec (${response.status})`,
+      );
     }
     const body = (await response.json()) as RechercheEntreprisesResponseA11y;
-    return body.results?.find((r) => r.siren === siren) ?? body.results?.[0] ?? null;
+    return (
+      body.results?.find((r) => r.siren === siren) ?? body.results?.[0] ?? null
+    );
   }
 
   private trancheDepasseSeuil(tranche: string | null): boolean | null {

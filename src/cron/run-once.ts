@@ -44,7 +44,10 @@ async function main() {
     ['Enrichissement NAF', () => app.get(EntreprisesService).run()],
     ['Qualification INPI (capital)', () => app.get(InpiService).run()],
     ['Confirmation presse', () => app.get(PresseService).run()],
-    ['Lecture actes INPI (sens/montant)', () => app.get(InpiActesService).run()],
+    [
+      'Lecture actes INPI (sens/montant)',
+      () => app.get(InpiActesService).run(),
+    ],
     ['Digest email mode Dev', () => app.get(NotificationsService).run()],
     ['Pipeline a11y (lot CrUX)', () => app.get(PipelineService).traiterLot()],
     ['Digest email mode a11y', () => app.get(A11yNotificationsService).run()],
@@ -56,7 +59,10 @@ async function main() {
     try {
       await executer();
     } catch (err) {
-      console.error(`Etape "${nom}" en echec, on continue quand meme :`, (err as Error).message);
+      console.error(
+        `Etape "${nom}" en echec, on continue quand meme :`,
+        (err as Error).message,
+      );
     }
     console.log(`(${Math.round((Date.now() - debut) / 1000)}s)`);
   }

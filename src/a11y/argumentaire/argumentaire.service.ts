@@ -72,7 +72,10 @@ export class ArgumentaireService {
     return ca >= SEUIL_ART47_CA ? 'art47_arcom' : 'eaa_code_conso';
   }
 
-  private paragrapheRegime(regime: RegimeApplicable, prospect: ProspectPourArgumentaire): string {
+  private paragrapheRegime(
+    regime: RegimeApplicable,
+    prospect: ProspectPourArgumentaire,
+  ): string {
     if (regime === 'art47_arcom') {
       return (
         `⚠️ CA (${this.formaterCa(prospect.ca)}) au-dessus de ${this.formaterCa(SEUIL_ART47_CA)} : ` +
@@ -114,8 +117,13 @@ export class ArgumentaireService {
         `sur ce regime (ex. cas Picard : absence totale de declaration, cite dans l'etude de faisabilite).`
       );
     }
-    if (prospect.statutDeclaration === 'non_conforme' || prospect.statutDeclaration === 'partiel') {
-      const source = prospect.sourceUrlDeclaration ? ` (source : ${prospect.sourceUrlDeclaration})` : '';
+    if (
+      prospect.statutDeclaration === 'non_conforme' ||
+      prospect.statutDeclaration === 'partiel'
+    ) {
+      const source = prospect.sourceUrlDeclaration
+        ? ` (source : ${prospect.sourceUrlDeclaration})`
+        : '';
       return (
         `Constat : ${entreprise} publie une declaration d'accessibilite indiquant un statut ` +
         `"${prospect.statutDeclaration}"${source} -- la demarche existe, l'ecart de conformite est deja ` +
@@ -125,18 +133,24 @@ export class ArgumentaireService {
     return `Constat : statut de declaration non concluant pour ${entreprise} (a verifier manuellement).`;
   }
 
-  private paragrapheTechnique(prospect: ProspectPourArgumentaire): string | null {
-    if (!prospect.scanTopViolations || !prospect.scanTotalViolations) return null;
+  private paragrapheTechnique(
+    prospect: ProspectPourArgumentaire,
+  ): string | null {
+    if (!prospect.scanTopViolations || !prospect.scanTotalViolations)
+      return null;
     let violations: ViolationResume[];
     try {
-      violations = JSON.parse(prospect.scanTopViolations);
+      violations = JSON.parse(prospect.scanTopViolations) as ViolationResume[];
     } catch {
       return null;
     }
     if (violations.length === 0) return null;
 
     const liste = violations
-      .map((v) => `- ${v.aide} (${v.impact}, ${v.nombreOccurrences} occurrence(s))`)
+      .map(
+        (v) =>
+          `- ${v.aide} (${v.impact}, ${v.nombreOccurrences} occurrence(s))`,
+      )
       .join('\n');
     return (
       `Elements techniques (scan automatise, page d'accueil, ${prospect.scanTotalViolations} anomalie(s) ` +

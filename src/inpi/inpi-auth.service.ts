@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InpiLoginResponse } from './inpi.types';
 
-export const INPI_BASE_URL = 'https://registre-national-entreprises.inpi.fr/api';
+export const INPI_BASE_URL =
+  'https://registre-national-entreprises.inpi.fr/api';
 
 /**
  * Authentification INPI partagee entre InpiService (capital actuel) et
@@ -28,11 +29,15 @@ export class InpiAuthService {
       body: JSON.stringify({ username, password }),
     });
     if (!response.ok) {
-      throw new Error(`Login INPI en echec (${response.status} ${response.statusText})`);
+      throw new Error(
+        `Login INPI en echec (${response.status} ${response.statusText})`,
+      );
     }
     const body = (await response.json()) as InpiLoginResponse;
     if (!body.token) {
-      throw new Error("Login INPI : reponse sans champ 'token' (schema inattendu).");
+      throw new Error(
+        "Login INPI : reponse sans champ 'token' (schema inattendu).",
+      );
     }
     this.token = body.token;
     return this.token;

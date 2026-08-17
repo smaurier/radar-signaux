@@ -7,7 +7,10 @@ export class QualificationController {
 
   /** Test manuel sur un SIREN unique (dev/debug). */
   @Get()
-  async qualifier(@Query('siren') siren: string, @Query('domaine') domaine?: string) {
+  async qualifier(
+    @Query('siren') siren: string,
+    @Query('domaine') domaine?: string,
+  ) {
     return this.qualification.qualifier(siren, domaine);
   }
 }

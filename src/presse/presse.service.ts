@@ -31,10 +31,29 @@ export class PresseService {
   // suffixes/mots juridiques ou generiques a retirer avant matching, pour
   // eviter de chercher "SAS" ou "HOLDING" seul dans un article
   private readonly bruitLegal = new Set([
-    'SAS', 'SASU', 'SARL', 'EURL', 'SCI', 'SA', 'SNC', 'SCP', 'SELARL',
-    'SCM', 'HOLDING', 'GROUP', 'GROUPE', 'INVEST', 'INVESTMENT',
-    'INVESTMENTS', 'PARTICIPATIONS', 'CO', 'COMPANY', 'FRANCE', 'SOCIETE',
-    'CIVILE', 'IMMOBILIERE',
+    'SAS',
+    'SASU',
+    'SARL',
+    'EURL',
+    'SCI',
+    'SA',
+    'SNC',
+    'SCP',
+    'SELARL',
+    'SCM',
+    'HOLDING',
+    'GROUP',
+    'GROUPE',
+    'INVEST',
+    'INVESTMENT',
+    'INVESTMENTS',
+    'PARTICIPATIONS',
+    'CO',
+    'COMPANY',
+    'FRANCE',
+    'SOCIETE',
+    'CIVILE',
+    'IMMOBILIERE',
   ]);
 
   constructor(private readonly storage: StorageService) {}
@@ -47,7 +66,13 @@ export class PresseService {
   }
 
   async run(): Promise<
-    Array<{ siren: string; commercant: string; source: string; url: string; titre: string }>
+    Array<{
+      siren: string;
+      commercant: string;
+      source: string;
+      url: string;
+      titre: string;
+    }>
   > {
     const candidats = this.storage
       .listUnconfirmedByPresse()
@@ -89,13 +114,19 @@ export class PresseService {
           const cle = `${candidat.siren}|${candidat.dateParution}`;
           if (dejaConfirmes.has(cle)) continue;
 
-          const motif = new RegExp(`\\b${this.echapperRegex(candidat.core)}\\b`);
+          const motif = new RegExp(
+            `\\b${this.echapperRegex(candidat.core)}\\b`,
+          );
           if (motif.test(texte)) {
-            this.storage.markConfirmedByPresse(candidat.siren, candidat.dateParution, {
-              source: feed.source,
-              url: item.link ?? '',
-              titre: item.title ?? '',
-            });
+            this.storage.markConfirmedByPresse(
+              candidat.siren,
+              candidat.dateParution,
+              {
+                source: feed.source,
+                url: item.link ?? '',
+                titre: item.title ?? '',
+              },
+            );
             dejaConfirmes.add(cle);
             matches.push({
               siren: candidat.siren,
@@ -116,12 +147,23 @@ export class PresseService {
   }
 
   private readonly accents: Record<string, string> = {
-    À: 'A', Â: 'A', Ä: 'A', Á: 'A',
-    É: 'E', È: 'E', Ê: 'E', Ë: 'E',
-    Î: 'I', Ï: 'I',
-    Ô: 'O', Ö: 'O',
-    Ù: 'U', Û: 'U', Ü: 'U',
-    Ç: 'C', Ñ: 'N',
+    À: 'A',
+    Â: 'A',
+    Ä: 'A',
+    Á: 'A',
+    É: 'E',
+    È: 'E',
+    Ê: 'E',
+    Ë: 'E',
+    Î: 'I',
+    Ï: 'I',
+    Ô: 'O',
+    Ö: 'O',
+    Ù: 'U',
+    Û: 'U',
+    Ü: 'U',
+    Ç: 'C',
+    Ñ: 'N',
   };
 
   /** Majuscules, sans accents, ponctuation reduite en espaces. */
@@ -131,7 +173,10 @@ export class PresseService {
       .split('')
       .map((car) => this.accents[car] ?? car)
       .join('');
-    return sansAccents.replace(/[^A-Z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+    return sansAccents
+      .replace(/[^A-Z0-9 ]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   /** Nom d'entreprise normalise, purge des formes juridiques/mots generiques. */

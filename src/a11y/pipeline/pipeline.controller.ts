@@ -17,7 +17,10 @@ export class PipelineController {
 
   /** Traite un lot de domaines pas encore vus, depuis le classement CrUX. */
   @Post('traiter-lot')
-  async traiterLot(@Query('limiteDomaines') limiteDomaines?: string, @Query('n') n?: string) {
+  async traiterLot(
+    @Query('limiteDomaines') limiteDomaines?: string,
+    @Query('n') n?: string,
+  ) {
     return this.pipeline.traiterLot(
       limiteDomaines ? Number(limiteDomaines) : undefined,
       n ? Number(n) : undefined,
@@ -25,12 +28,14 @@ export class PipelineController {
   }
 
   @Get('prospects')
-  async prospects(@Query('limit') limit?: string) {
-    return this.storage.listerProspectsQualifies(limit ? Number(limit) : undefined);
+  prospects(@Query('limit') limit?: string) {
+    return this.storage.listerProspectsQualifies(
+      limit ? Number(limit) : undefined,
+    );
   }
 
   @Get('recent')
-  async recent(@Query('limit') limit?: string) {
+  recent(@Query('limit') limit?: string) {
     return this.storage.listerRecent(limit ? Number(limit) : undefined);
   }
 }

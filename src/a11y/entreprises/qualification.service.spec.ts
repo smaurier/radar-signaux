@@ -12,11 +12,15 @@ describe('QualificationService', () => {
   const service = new QualificationService();
   const coherent = (nomComplet: string, domaine: string) =>
     (
-      service as unknown as { coherentAvecDomaine: (n: string, d: string) => boolean }
+      service as unknown as {
+        coherentAvecDomaine: (n: string, d: string) => boolean;
+      }
     ).coherentAvecDomaine(nomComplet, domaine);
   const trancheDepasseSeuil = (tranche: string | null) =>
     (
-      service as unknown as { trancheDepasseSeuil: (t: string | null) => boolean | null }
+      service as unknown as {
+        trancheDepasseSeuil: (t: string | null) => boolean | null;
+      }
     ).trancheDepasseSeuil(tranche);
 
   describe('coherentAvecDomaine', () => {

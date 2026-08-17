@@ -10,7 +10,9 @@ import { MentionsLegalesService } from './mentions-legales.service';
 describe('MentionsLegalesService', () => {
   const service = new MentionsLegalesService(undefined as never);
   const chercherSiren = (html: string) =>
-    (service as unknown as { chercherSiren: (h: string) => string | null }).chercherSiren(html);
+    (
+      service as unknown as { chercherSiren: (h: string) => string | null }
+    ).chercherSiren(html);
   const trouverLien = (html: string, base: string) =>
     (
       service as unknown as {
@@ -20,7 +22,9 @@ describe('MentionsLegalesService', () => {
 
   describe('chercherSiren', () => {
     it('trouve un SIREN au format direct "SIREN : X"', () => {
-      expect(chercherSiren('Mentions légales - SIREN : 330 267 691')).toBe('330267691');
+      expect(chercherSiren('Mentions légales - SIREN : 330 267 691')).toBe(
+        '330267691',
+      );
     });
 
     it('trouve un SIREN via SIRET (garde les 9 premiers chiffres)', () => {
@@ -30,7 +34,7 @@ describe('MentionsLegalesService', () => {
     it('trouve le vrai SIREN de Caroll via la formulation "RCS de VILLE sous le n° X" (bug corrige)', () => {
       const texte =
         "L'éditeur du site www.caroll.com est la société CAROLL INTERNATIONAL, société " +
-        "anonyme au capital de 21 966 966,85 euros, immatriculée au RCS de SAINT-MALO " +
+        'anonyme au capital de 21 966 966,85 euros, immatriculée au RCS de SAINT-MALO ' +
         'sous le n° 582 001 707 et dont le siège social est situé...';
       expect(chercherSiren(texte)).toBe('582001707');
     });
@@ -41,18 +45,25 @@ describe('MentionsLegalesService', () => {
   });
 
   describe('trouverLienMentionsLegales', () => {
-    it('trouve le lien via le mot dans l\'URL (priorite 1, meme si texte du lien mal encode)', () => {
-      const html = '<a href="/fr/content/2-mentions-legales" class="x">Mentions l�gales</a>';
-      expect(trouverLien(html, 'https://exemple.fr')).toBe('https://exemple.fr/fr/content/2-mentions-legales');
+    it("trouve le lien via le mot dans l'URL (priorite 1, meme si texte du lien mal encode)", () => {
+      const html =
+        '<a href="/fr/content/2-mentions-legales" class="x">Mentions l�gales</a>';
+      expect(trouverLien(html, 'https://exemple.fr')).toBe(
+        'https://exemple.fr/fr/content/2-mentions-legales',
+      );
     });
 
     it('resout une URL relative par rapport au domaine de base', () => {
       const html = '<a href="mentions-legales.html">Mentions</a>';
-      expect(trouverLien(html, 'https://exemple.fr')).toBe('https://exemple.fr/mentions-legales.html');
+      expect(trouverLien(html, 'https://exemple.fr')).toBe(
+        'https://exemple.fr/mentions-legales.html',
+      );
     });
 
     it('retourne null si aucun lien mentions legales trouve', () => {
-      expect(trouverLien('<a href="/contact">Contact</a>', 'https://exemple.fr')).toBeNull();
+      expect(
+        trouverLien('<a href="/contact">Contact</a>', 'https://exemple.fr'),
+      ).toBeNull();
     });
   });
 });

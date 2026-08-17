@@ -110,7 +110,10 @@ export class StorageService implements OnModuleDestroy {
         this.db.exec(`ALTER TABLE bodacc_signaux ADD COLUMN ${ddl}`);
       }
     };
-    addColumn('presse_confirmee', 'presse_confirmee INTEGER NOT NULL DEFAULT 0');
+    addColumn(
+      'presse_confirmee',
+      'presse_confirmee INTEGER NOT NULL DEFAULT 0',
+    );
     addColumn('presse_source', 'presse_source TEXT');
     addColumn('presse_url', 'presse_url TEXT');
     addColumn('presse_titre', 'presse_titre TEXT');
@@ -195,7 +198,11 @@ export class StorageService implements OnModuleDestroy {
     return rows as BodaccSignal[];
   }
 
-  markQualifiedByInpi(siren: string, dateParution: string, qualification: QualificationInpi): void {
+  markQualifiedByInpi(
+    siren: string,
+    dateParution: string,
+    qualification: QualificationInpi,
+  ): void {
     this.db
       .prepare(
         `UPDATE bodacc_signaux
@@ -250,7 +257,11 @@ export class StorageService implements OnModuleDestroy {
     return rows as BodaccSignal[];
   }
 
-  markEnriched(siren: string, dateParution: string, enrichissement: Enrichissement): void {
+  markEnriched(
+    siren: string,
+    dateParution: string,
+    enrichissement: Enrichissement,
+  ): void {
     this.db
       .prepare(
         `UPDATE bodacc_signaux

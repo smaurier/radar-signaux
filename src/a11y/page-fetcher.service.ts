@@ -2,7 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { NavigateurService } from './navigateur.service';
 import { RobotsService } from './robots.service';
 
-const USER_AGENT = 'radar-signaux-bot/0.1 (+https://github.com/smaurier/radar-signaux)';
+const USER_AGENT =
+  'radar-signaux-bot/0.1 (+https://github.com/smaurier/radar-signaux)';
 const TIMEOUT_MS = 15000;
 
 export interface ResultatFetch {
@@ -51,7 +52,9 @@ export class PageFetcherService {
   /** Force le rendu navigateur (contenu injecte en JS, ex. footer de SPA). */
   async fetchViaNavigateur(url: string): Promise<string | null> {
     if (!(await this.robots.estAutorise(url))) {
-      this.logger.debug(`robots.txt interdit ${url} (rendu navigateur), ignore.`);
+      this.logger.debug(
+        `robots.txt interdit ${url} (rendu navigateur), ignore.`,
+      );
       return null;
     }
     return this.navigateur.fetchTexte(url);
@@ -71,15 +74,24 @@ export class PageFetcherService {
         redirect: 'follow',
       });
       clearTimeout(timer);
-      if (response.status === 403 || response.status === 429 || response.status === 503) {
+      if (
+        response.status === 403 ||
+        response.status === 429 ||
+        response.status === 503
+      ) {
         return { html: null, bloque: true };
       }
       if (!response.ok) return { html: null, bloque: false };
       const buffer = await response.arrayBuffer();
-      const html = this.decoderHtml(buffer, response.headers.get('content-type'));
+      const html = this.decoderHtml(
+        buffer,
+        response.headers.get('content-type'),
+      );
       return { html, bloque: false };
     } catch (err) {
-      this.logger.warn(`Fetch ${url} en echec, ignore (${(err as Error).message})`);
+      this.logger.warn(
+        `Fetch ${url} en echec, ignore (${(err as Error).message})`,
+      );
       return { html: null, bloque: false };
     }
   }
@@ -107,7 +119,10 @@ export class PageFetcherService {
     }
   }
 
-  private detecterCharset(buffer: ArrayBuffer, contentType: string | null): string {
+  private detecterCharset(
+    buffer: ArrayBuffer,
+    contentType: string | null,
+  ): string {
     const depuisHeader = contentType?.match(/charset=([^;]+)/i)?.[1];
     if (depuisHeader) return depuisHeader.trim().toLowerCase();
 

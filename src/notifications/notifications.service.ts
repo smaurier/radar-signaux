@@ -65,8 +65,12 @@ export class NotificationsService {
       html: this.buildHtmlBody(signaux),
     });
 
-    this.storage.markNotified(signaux.map((s) => ({ siren: s.siren, dateParution: s.dateParution })));
-    this.logger.log(`Notifications : digest envoye (${signaux.length} signal(aux)).`);
+    this.storage.markNotified(
+      signaux.map((s) => ({ siren: s.siren, dateParution: s.dateParution })),
+    );
+    this.logger.log(
+      `Notifications : digest envoye (${signaux.length} signal(aux)).`,
+    );
     return signaux.length;
   }
 
@@ -78,11 +82,17 @@ export class NotificationsService {
    * tout reste dans la base et dans /bodacc/signaux, seul l'AFFICHAGE
    * du digest est resume.
    */
-  private separer(signaux: BodaccSignal[]): { techProbable: BodaccSignal[]; autres: BodaccSignal[] } {
+  private separer(signaux: BodaccSignal[]): {
+    techProbable: BodaccSignal[];
+    autres: BodaccSignal[];
+  } {
     const techProbable: BodaccSignal[] = [];
     const autres: BodaccSignal[] = [];
     for (const s of signaux) {
-      (isSecteurTechProbable(s.nafCode, s.sectionActivite) ? techProbable : autres).push(s);
+      (isSecteurTechProbable(s.nafCode, s.sectionActivite)
+        ? techProbable
+        : autres
+      ).push(s);
     }
     return { techProbable, autres };
   }
@@ -99,7 +109,9 @@ export class NotificationsService {
         : null,
       this.descriptionActe(s),
     ].filter(Boolean);
-    const tag = isSecteurTechProbable(s.nafCode, s.sectionActivite) ? '🔧 tech probable — ' : '';
+    const tag = isSecteurTechProbable(s.nafCode, s.sectionActivite)
+      ? '🔧 tech probable — '
+      : '';
     return `${tag}${parts.join(', ') || 'donnees indisponibles'}`;
   }
 
@@ -107,11 +119,13 @@ export class NotificationsService {
   private descriptionActe(s: BodaccSignal): string | null {
     if (!s.acteLu || !s.acteSens) return null;
     const delta =
-      typeof s.acteCapitalAvant === 'number' && typeof s.acteCapitalApres === 'number'
+      typeof s.acteCapitalAvant === 'number' &&
+      typeof s.acteCapitalApres === 'number'
         ? Math.abs(s.acteCapitalApres - s.acteCapitalAvant)
         : null;
     const fleche = s.acteSens === 'hausse' ? '📈' : '📉';
-    const montant = delta !== null ? ` de ${delta.toLocaleString('fr-FR')} €` : '';
+    const montant =
+      delta !== null ? ` de ${delta.toLocaleString('fr-FR')} €` : '';
     return `${fleche} ${s.acteSens}${montant} (acte lu)`;
   }
 
@@ -135,7 +149,7 @@ export class NotificationsService {
       'Rappel : le "capital actuel" (INPI) est l\'etat present, pas le montant de LA modification',
       'detectee au BODACC (qui ne precise ni sens ni montant depuis 2023) -- indice de taille, pas de preuve.',
       '"tech probable" est une heuristique NAF, pas une classification fiable (a verifier manuellement).',
-      'Elle peut rater de vraies entreprises tech hors classification standard : a affiner avec l\'usage.',
+      "Elle peut rater de vraies entreprises tech hors classification standard : a affiner avec l'usage.",
     ].join('\n');
   }
 

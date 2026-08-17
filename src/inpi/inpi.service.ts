@@ -34,13 +34,18 @@ export class InpiService {
     private readonly auth: InpiAuthService,
   ) {}
 
-  private async getCompany(siren: string, token: string): Promise<InpiCompanyResponse | null> {
+  private async getCompany(
+    siren: string,
+    token: string,
+  ): Promise<InpiCompanyResponse | null> {
     const response = await fetch(`${INPI_BASE_URL}/companies/${siren}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (response.status === 404) return null;
     if (!response.ok) {
-      throw new Error(`Lecture INPI ${siren} en echec (${response.status} ${response.statusText})`);
+      throw new Error(
+        `Lecture INPI ${siren} en echec (${response.status} ${response.statusText})`,
+      );
     }
     return (await response.json()) as InpiCompanyResponse;
   }
@@ -60,7 +65,9 @@ export class InpiService {
       if (/capital/i.test(cle)) {
         // exclut explicitement les booleens : Number(false) = 0 serait sinon
         // capte a tort comme "capital = 0" (cas reel : "capitalVariable": false)
-        const estNumerique = typeof val === 'number' || (typeof val === 'string' && val.trim() !== '');
+        const estNumerique =
+          typeof val === 'number' ||
+          (typeof val === 'string' && val.trim() !== '');
         const num = typeof val === 'number' ? val : Number(val);
         if (typeof val !== 'boolean' && estNumerique && !Number.isNaN(num)) {
           candidats.push({ path: cheminActuel, value: num });
@@ -73,9 +80,13 @@ export class InpiService {
     return candidats;
   }
 
-  private meilleurCandidat(candidats: CapitalCandidate[]): CapitalCandidate | null {
+  private meilleurCandidat(
+    candidats: CapitalCandidate[],
+  ): CapitalCandidate | null {
     if (candidats.length === 0) return null;
-    const prioritaire = candidats.find((c) => /montantCapital|capitalSocial/i.test(c.path));
+    const prioritaire = candidats.find((c) =>
+      /montantCapital|capitalSocial/i.test(c.path),
+    );
     return prioritaire ?? candidats[0];
   }
 
@@ -101,7 +112,9 @@ export class InpiService {
     try {
       token = await this.auth.getToken();
     } catch (err) {
-      this.logger.error(`INPI : login en echec, qualification annulee (${(err as Error).message})`);
+      this.logger.error(
+        `INPI : login en echec, qualification annulee (${(err as Error).message})`,
+      );
       return 0;
     }
 
@@ -130,16 +143,22 @@ export class InpiService {
         }
         this.storage.markQualifiedByInpi(signal.siren, signal.dateParution, {
           capital: meilleur ? meilleur.value : null,
-          erreur: meilleur ? null : 'chemin capital introuvable dans la reponse',
+          erreur: meilleur
+            ? null
+            : 'chemin capital introuvable dans la reponse',
         });
         traites++;
       } catch (err) {
-        this.logger.warn(`INPI ${signal.siren} en echec, ignore (${(err as Error).message})`);
+        this.logger.warn(
+          `INPI ${signal.siren} en echec, ignore (${(err as Error).message})`,
+        );
       }
       await this.attendre(150);
     }
 
-    this.logger.log(`INPI : ${traites}/${candidats.length} signal(aux) qualifie(s).`);
+    this.logger.log(
+      `INPI : ${traites}/${candidats.length} signal(aux) qualifie(s).`,
+    );
     return traites;
   }
 

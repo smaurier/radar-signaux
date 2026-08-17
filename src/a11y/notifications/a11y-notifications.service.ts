@@ -44,7 +44,10 @@ export class A11yNotificationsService {
     if (!user || !pass) {
       throw new Error('GMAIL_USER / GMAIL_APP_PASSWORD manquants (.env).');
     }
-    this.transporter = createTransport({ service: 'gmail', auth: { user, pass } });
+    this.transporter = createTransport({
+      service: 'gmail',
+      auth: { user, pass },
+    });
     return this.transporter;
   }
 
@@ -63,7 +66,8 @@ export class A11yNotificationsService {
     }
 
     const to = process.env.RADAR_NOTIFY_TO ?? process.env.GMAIL_USER;
-    if (!to) throw new Error('RADAR_NOTIFY_TO (ou GMAIL_USER) manquant (.env).');
+    if (!to)
+      throw new Error('RADAR_NOTIFY_TO (ou GMAIL_USER) manquant (.env).');
 
     const transporter = this.getTransporter();
     await transporter.sendMail({
@@ -75,7 +79,9 @@ export class A11yNotificationsService {
     });
 
     this.storage.marquerNotifies(prospects.map((p) => p.domaine));
-    this.logger.log(`Notifications a11y : digest envoye (${prospects.length} prospect(s)).`);
+    this.logger.log(
+      `Notifications a11y : digest envoye (${prospects.length} prospect(s)).`,
+    );
     return prospects.length;
   }
 
@@ -116,8 +122,8 @@ export class A11yNotificationsService {
       ...lignes,
       '',
       "Rappel : axe-core ne couvre qu'une partie des violations reelles (~30-50%), ce n'est jamais",
-      "une preuve de conformite a lui seul -- seule la declaration RGAA du site (deja lue) fait foi.",
-      "Verifier manuellement avant toute prise de contact.",
+      'une preuve de conformite a lui seul -- seule la declaration RGAA du site (deja lue) fait foi.',
+      'Verifier manuellement avant toute prise de contact.',
     ].join('\n');
   }
 

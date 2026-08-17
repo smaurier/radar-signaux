@@ -8,7 +8,9 @@ export class DomainesController {
   /** Liste les domaines cibles (dev/debug), sans rien stocker. */
   @Get()
   async lister(@Query('limite') limite?: string) {
-    const domaines = await this.domaines.listerDomaines(limite ? Number(limite) : undefined);
+    const domaines = await this.domaines.listerDomaines(
+      limite ? Number(limite) : undefined,
+    );
     return { total: domaines.length, domaines };
   }
 }

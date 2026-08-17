@@ -59,7 +59,9 @@ export class EntreprisesService {
       await this.attendre(this.delaiEntreAppelsMs);
     }
 
-    this.logger.log(`Enrichissement : ${enrichis}/${candidats.length} signal(aux) enrichi(s).`);
+    this.logger.log(
+      `Enrichissement : ${enrichis}/${candidats.length} signal(aux) enrichi(s).`,
+    );
     return enrichis;
   }
 
@@ -67,7 +69,9 @@ export class EntreprisesService {
     const params = new URLSearchParams({ q: siren });
     const response = await fetch(`${API_URL}?${params.toString()}`);
     if (!response.ok) {
-      throw new Error(`API Recherche d'entreprises en echec (${response.status})`);
+      throw new Error(
+        `API Recherche d'entreprises en echec (${response.status})`,
+      );
     }
     const body = (await response.json()) as RechercheEntreprisesResponse;
     return body.results?.find((r) => r.siren === siren) ?? body.results?.[0];

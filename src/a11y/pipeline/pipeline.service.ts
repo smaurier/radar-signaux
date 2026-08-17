@@ -5,7 +5,10 @@ import { MentionsLegalesService } from '../entreprises/mentions-legales.service'
 import { QualificationService } from '../entreprises/qualification.service';
 import { DeclarationService } from '../declaration/declaration.service';
 import { ScanService } from '../scan/scan.service';
-import { A11yStorageService, ProspectA11y } from '../storage/a11y-storage.service';
+import {
+  A11yStorageService,
+  ProspectA11y,
+} from '../storage/a11y-storage.service';
 
 /**
  * Orchestrateur du pipeline a11y : enchaine les 4 etapes (SIREN,
@@ -54,7 +57,10 @@ export class PipelineService {
     }
 
     prospect.etapeAtteinte = 'qualification';
-    const resQualif = await this.qualification.qualifier(resSiren.siren, domaine);
+    const resQualif = await this.qualification.qualifier(
+      resSiren.siren,
+      domaine,
+    );
     prospect.nomComplet = resQualif.nomComplet;
     prospect.nafCode = resQualif.nafCode;
     prospect.categorieEntreprise = resQualif.categorieEntreprise;
@@ -111,9 +117,14 @@ export class PipelineService {
    * navigateur (jusqu'a un scan axe-core), pas la peine de viser un trop
    * gros volume par run quotidien.
    */
-  async traiterLot(limiteDomaines = 10000, nombreATraiter = 15): Promise<ProspectA11y[]> {
+  async traiterLot(
+    limiteDomaines = 10000,
+    nombreATraiter = 15,
+  ): Promise<ProspectA11y[]> {
     const domaines = await this.domaines.listerDomaines(limiteDomaines);
-    const aTraiter = domaines.filter((d) => !this.storage.dejaTraite(d)).slice(0, nombreATraiter);
+    const aTraiter = domaines
+      .filter((d) => !this.storage.dejaTraite(d))
+      .slice(0, nombreATraiter);
 
     const resultats: ProspectA11y[] = [];
     for (const domaine of aTraiter) {
@@ -121,7 +132,9 @@ export class PipelineService {
         const prospect = await this.traiterDomaine(domaine);
         resultats.push(prospect);
       } catch (err) {
-        this.logger.warn(`Pipeline ${domaine} en echec, ignore (${(err as Error).message})`);
+        this.logger.warn(
+          `Pipeline ${domaine} en echec, ignore (${(err as Error).message})`,
+        );
       }
       await this.attendre(500);
     }

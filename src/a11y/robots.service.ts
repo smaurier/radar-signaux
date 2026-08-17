@@ -21,7 +21,10 @@ const TIMEOUT_MS = 8000;
 @Injectable()
 export class RobotsService {
   private readonly logger = new Logger(RobotsService.name);
-  private readonly cache = new Map<string, ReturnType<typeof robotsParser> | null>();
+  private readonly cache = new Map<
+    string,
+    ReturnType<typeof robotsParser> | null
+  >();
 
   async estAutorise(url: string): Promise<boolean> {
     try {
@@ -53,7 +56,9 @@ export class RobotsService {
       this.cache.set(origine, robot);
       return robot;
     } catch (err) {
-      this.logger.debug(`robots.txt ${url} inaccessible, autorise par defaut (${(err as Error).message})`);
+      this.logger.debug(
+        `robots.txt ${url} inaccessible, autorise par defaut (${(err as Error).message})`,
+      );
       this.cache.set(origine, null);
       return null;
     }

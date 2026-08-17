@@ -23,11 +23,13 @@ export class ArgumentaireController {
 
   /** Genere l'argumentaire pour un domaine deja traite par le pipeline. */
   @Get()
-  async generer(@Query('domaine') domaine: string) {
+  generer(@Query('domaine') domaine: string) {
     const rows = this.storage.listerRecent(500) as RowProspect[];
     const row = rows.find((r) => r.domaine === domaine);
     if (!row) {
-      throw new NotFoundException(`Domaine ${domaine} pas encore traite par le pipeline a11y.`);
+      throw new NotFoundException(
+        `Domaine ${domaine} pas encore traite par le pipeline a11y.`,
+      );
     }
     return this.argumentaire.genererArgumentaire({
       domaine: row.domaine,

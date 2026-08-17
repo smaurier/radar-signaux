@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import { Browser, chromium, Page } from 'playwright';
+import { Browser, BrowserContext, chromium, Page } from 'playwright';
 
 const USER_AGENT_NAVIGATEUR =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
@@ -32,15 +32,23 @@ export class NavigateurService implements OnModuleDestroy {
   }
 
   async fetchTexte(url: string, timeoutMs = 20000): Promise<string | null> {
-    let context;
+    let context: BrowserContext | undefined;
     try {
       const browser = await this.getBrowser();
-      context = await browser.newContext({ userAgent: USER_AGENT_NAVIGATEUR, locale: 'fr-FR' });
+      context = await browser.newContext({
+        userAgent: USER_AGENT_NAVIGATEUR,
+        locale: 'fr-FR',
+      });
       const page = await context.newPage();
-      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
+      await page.goto(url, {
+        waitUntil: 'domcontentloaded',
+        timeout: timeoutMs,
+      });
       return await page.content();
     } catch (err) {
-      this.logger.warn(`Navigateur : ${url} en echec (${(err as Error).message})`);
+      this.logger.warn(
+        `Navigateur : ${url} en echec (${(err as Error).message})`,
+      );
       return null;
     } finally {
       await context?.close();
@@ -57,15 +65,23 @@ export class NavigateurService implements OnModuleDestroy {
     fn: (page: Page) => Promise<T>,
     timeoutMs = 20000,
   ): Promise<T | null> {
-    let context;
+    let context: BrowserContext | undefined;
     try {
       const browser = await this.getBrowser();
-      context = await browser.newContext({ userAgent: USER_AGENT_NAVIGATEUR, locale: 'fr-FR' });
+      context = await browser.newContext({
+        userAgent: USER_AGENT_NAVIGATEUR,
+        locale: 'fr-FR',
+      });
       const page = await context.newPage();
-      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
+      await page.goto(url, {
+        waitUntil: 'domcontentloaded',
+        timeout: timeoutMs,
+      });
       return await fn(page);
     } catch (err) {
-      this.logger.warn(`Navigateur : ${url} en echec (${(err as Error).message})`);
+      this.logger.warn(
+        `Navigateur : ${url} en echec (${(err as Error).message})`,
+      );
       return null;
     } finally {
       await context?.close();

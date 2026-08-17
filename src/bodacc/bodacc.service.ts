@@ -44,7 +44,9 @@ export class BodaccService {
     const records = await this.fetchAllRecords();
     const signals = records.map((r) => this.toSignal(r));
     const nouveaux = this.storage.upsertNewSignals(signals);
-    const zone = this.regionCode ? `region ${this.regionCode}` : 'France entiere';
+    const zone = this.regionCode
+      ? `region ${this.regionCode}`
+      : 'France entiere';
     this.logger.log(
       `BODACC : ${records.length} annonce(s) recue(s), ${nouveaux.length} nouvelle(s) (${zone}, ${this.lookbackDays}j).`,
     );
@@ -53,7 +55,9 @@ export class BodaccService {
 
   private async fetchAllRecords() {
     const since = this.isoDateDaysAgo(this.lookbackDays);
-    const filtreRegion = this.regionCode ? ` AND region_code="${this.regionCode}"` : '';
+    const filtreRegion = this.regionCode
+      ? ` AND region_code="${this.regionCode}"`
+      : '';
     const where = `modificationsgenerales like "capital"${filtreRegion} AND dateparution>="${since}"`;
 
     const all: BodaccApiResponse['results'] = [];

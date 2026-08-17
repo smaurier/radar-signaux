@@ -31,7 +31,8 @@ import { ArgumentaireService } from '../a11y/argumentaire/argumentaire.service';
  * couplage NestJS reel malgre le decorateur @Injectable).
  */
 
-const dbPath = process.env.RADAR_DB_PATH ?? join(process.cwd(), 'data', 'radar.sqlite');
+const dbPath =
+  process.env.RADAR_DB_PATH ?? join(process.cwd(), 'data', 'radar.sqlite');
 if (!existsSync(dbPath)) {
   console.error(
     `radar-signaux MCP : base introuvable (${dbPath}). Lancer l'app au moins une fois pour la creer.`,
@@ -52,7 +53,7 @@ server.registerTool(
       "Liste les signaux de modification de capital les plus recents (levees de fonds potentielles), avec enrichissement NAF/INPI/presse quand disponible. Rappel : le BODACC seul ne confirme ni le sens ni le montant d'une modification -- verifier les champs inpiCapital/acteSens avant toute conclusion.",
     inputSchema: { limite: z.number().int().min(1).max(200).optional() },
   },
-  async ({ limite }) => {
+  ({ limite }) => {
     const rows = db
       .prepare(
         `SELECT siren, date_parution as dateParution, commercant, tribunal,
@@ -74,10 +75,10 @@ server.registerTool(
   {
     title: 'Prospects a11y qualifies (mode Freelance)',
     description:
-      "Liste les prospects qualifies pour la prospection Nuada (>10 salaries, >2M€ CA, declaration RGAA absente/non conforme/partielle). Rappel : scan axe-core = accroche technique, pas une preuve de conformite a lui seul (couverture ~30-50%).",
+      'Liste les prospects qualifies pour la prospection Nuada (>10 salaries, >2M€ CA, declaration RGAA absente/non conforme/partielle). Rappel : scan axe-core = accroche technique, pas une preuve de conformite a lui seul (couverture ~30-50%).',
     inputSchema: { limite: z.number().int().min(1).max(200).optional() },
   },
-  async ({ limite }) => {
+  ({ limite }) => {
     const rows = db
       .prepare(
         `SELECT domaine, siren, nom_complet as nomComplet, naf_code as nafCode, ca,
@@ -103,7 +104,7 @@ server.registerTool(
       'Cherche par nom, SIREN ou domaine dans les signaux mode Dev ET les prospects mode a11y. Utile pour verifier si une entreprise deja croisee ailleurs (ex. conseiller carriere) apparait dans le radar.',
     inputSchema: { requete: z.string().min(2) },
   },
-  async ({ requete }) => {
+  ({ requete }) => {
     const motif = `%${requete}%`;
     const signauxDev = db
       .prepare(
@@ -125,7 +126,11 @@ server.registerTool(
       content: [
         {
           type: 'text',
-          text: JSON.stringify({ modeDev: signauxDev, modeA11y: prospectsA11y }, null, 2),
+          text: JSON.stringify(
+            { modeDev: signauxDev, modeA11y: prospectsA11y },
+            null,
+            2,
+          ),
         },
       ],
     };
@@ -135,12 +140,12 @@ server.registerTool(
 server.registerTool(
   'get_argumentaire',
   {
-    title: "Argumentaire juridique pour un prospect a11y",
+    title: 'Argumentaire juridique pour un prospect a11y',
     description:
-      "Genere la base factuelle (regime EAA/art.47 selon le CA reel, sanctions, constat, violations techniques) pour un domaine deja traite par le pipeline a11y. Pas un email pret a envoyer -- relecture humaine obligatoire avant tout contact.",
+      'Genere la base factuelle (regime EAA/art.47 selon le CA reel, sanctions, constat, violations techniques) pour un domaine deja traite par le pipeline a11y. Pas un email pret a envoyer -- relecture humaine obligatoire avant tout contact.',
     inputSchema: { domaine: z.string().min(3) },
   },
-  async ({ domaine }) => {
+  ({ domaine }) => {
     const row = db
       .prepare(
         `SELECT domaine, nom_complet as nomComplet, siren, naf_code as nafCode, ca,
@@ -167,13 +172,20 @@ server.registerTool(
 
     if (!row) {
       return {
-        content: [{ type: 'text', text: `Domaine ${domaine} pas encore traite par le pipeline a11y.` }],
+        content: [
+          {
+            type: 'text',
+            text: `Domaine ${domaine} pas encore traite par le pipeline a11y.`,
+          },
+        ],
         isError: true,
       };
     }
 
     const resultat = argumentaire.genererArgumentaire(row);
-    return { content: [{ type: 'text', text: JSON.stringify(resultat, null, 2) }] };
+    return {
+      content: [{ type: 'text', text: JSON.stringify(resultat, null, 2) }],
+    };
   },
 );
 

@@ -36,20 +36,25 @@ describe('InpiActesService', () => {
   });
 
   it('detecte le sens "baisse" sur "Reduction de Capital"', () => {
-    const resultat = parserCapital('Le Conseil decide une Réduction de Capital de la société.');
+    const resultat = parserCapital(
+      'Le Conseil decide une Réduction de Capital de la société.',
+    );
     expect(resultat.sens).toBe('baisse');
   });
 
   it('tolere une apostrophe typographique dans "s\'eleve" (bug corrige le 11/08)', () => {
     // le texte reel utilise une apostrophe typographique (’, U+2019), pas
     // l'apostrophe ASCII -- la premiere version de la regex la ratait
-    const texte = "que le capital social s’élève désormais à 39.026,31656 euros";
+    const texte =
+      'que le capital social s’élève désormais à 39.026,31656 euros';
     const resultat = parserCapital(texte);
     expect(resultat.capitalApres).toBeCloseTo(39026.31656);
   });
 
   it('ne trouve rien sur un texte sans formulation reconnue -> erreur explicite', () => {
-    const resultat = parserCapital('Ceci est un document sans rapport avec le capital social.');
+    const resultat = parserCapital(
+      'Ceci est un document sans rapport avec le capital social.',
+    );
     expect(resultat.sens).toBeNull();
     expect(resultat.capitalAvant).toBeNull();
     expect(resultat.capitalApres).toBeNull();
@@ -65,7 +70,8 @@ describe('InpiActesService', () => {
   });
 
   it('extrait avant/apres sur la formulation "reduit de X euros a Y euros" (ajoutee 13/08)', () => {
-    const texte = 'Le capital social est réduit de 20.000 euros à 12.000 euros.';
+    const texte =
+      'Le capital social est réduit de 20.000 euros à 12.000 euros.';
     const resultat = parserCapital(texte);
     expect(resultat.sens).toBe('baisse');
     expect(resultat.capitalAvant).toBeCloseTo(20000);
@@ -73,7 +79,8 @@ describe('InpiActesService', () => {
   });
 
   it('extrait le capital final sur la formulation "fixe a la somme de Y euros" (ajoutee 13/08)', () => {
-    const texte = 'Augmentation de Capital. Le capital social est fixé à la somme de 50.000 euros.';
+    const texte =
+      'Augmentation de Capital. Le capital social est fixé à la somme de 50.000 euros.';
     const resultat = parserCapital(texte);
     expect(resultat.sens).toBe('hausse');
     expect(resultat.capitalApres).toBeCloseTo(50000);

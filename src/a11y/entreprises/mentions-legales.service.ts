@@ -25,7 +25,8 @@ const CHEMINS_USUELS = [
  * 'indetermine' : aucune page accessible, aucun blocage explicite non plus
  *   (DNS, timeout, connexion refusee...).
  */
-export type StatutExtraction = 'trouve' | 'non_trouve' | 'bloque' | 'indetermine';
+export type StatutExtraction =
+  'trouve' | 'non_trouve' | 'bloque' | 'indetermine';
 
 export interface ResultatSiren {
   siren: string | null;
@@ -68,7 +69,12 @@ export class MentionsLegalesService {
         if (page.html) {
           unePageLue = true;
           const sirenPage = this.chercherSiren(page.html);
-          if (sirenPage) return { siren: sirenPage, sourceUrl: lienMentions, statut: 'trouve' };
+          if (sirenPage)
+            return {
+              siren: sirenPage,
+              sourceUrl: lienMentions,
+              statut: 'trouve',
+            };
         }
       }
     }
@@ -84,11 +90,15 @@ export class MentionsLegalesService {
     }
 
     if (unBlocage) return { siren: null, sourceUrl: null, statut: 'bloque' };
-    if (unePageLue) return { siren: null, sourceUrl: null, statut: 'non_trouve' };
+    if (unePageLue)
+      return { siren: null, sourceUrl: null, statut: 'non_trouve' };
     return { siren: null, sourceUrl: null, statut: 'indetermine' };
   }
 
-  private trouverLienMentionsLegales(html: string, base: string): string | null {
+  private trouverLienMentionsLegales(
+    html: string,
+    base: string,
+  ): string | null {
     // Priorite 1 : le mot "mentions" dans l'URL elle-meme (le slug), pas
     // dans le texte visible du lien -- plus robuste que le texte, qui peut
     // etre mal encode (accent -> caractere de remplacement, constate en
@@ -106,7 +116,8 @@ export class MentionsLegalesService {
 
     // Priorite 2 (repli) : texte visible du lien. "l.gales" (point =
     // e/e-accent/remplacement) pour la meme raison d'encodage que ci-dessus.
-    const regexTexte = /<a[^>]+href=["']([^"']+)["'][^>]*>([^<]*mentions?\s*l.gales?[^<]*)<\/a>/i;
+    const regexTexte =
+      /<a[^>]+href=["']([^"']+)["'][^>]*>([^<]*mentions?\s*l.gales?[^<]*)<\/a>/i;
     const match = html.match(regexTexte);
     if (!match) return null;
     try {
@@ -120,10 +131,14 @@ export class MentionsLegalesService {
   private chercherSiren(html: string): string | null {
     const texte = html.replace(/<[^>]+>/g, ' '); // degrossissage : retire les balises pour limiter les faux positifs sur des attributs
 
-    const sirenMatch = texte.match(/SIREN\s*:?\s*(\d{3}[\s.]?\d{3}[\s.]?\d{3})\b/i);
+    const sirenMatch = texte.match(
+      /SIREN\s*:?\s*(\d{3}[\s.]?\d{3}[\s.]?\d{3})\b/i,
+    );
     if (sirenMatch) return sirenMatch[1].replace(/\D/g, '');
 
-    const siretMatch = texte.match(/SIRET\s*:?\s*(\d{3}[\s.]?\d{3}[\s.]?\d{3}[\s.]?\d{5})\b/i);
+    const siretMatch = texte.match(
+      /SIRET\s*:?\s*(\d{3}[\s.]?\d{3}[\s.]?\d{3}[\s.]?\d{5})\b/i,
+    );
     if (siretMatch) return siretMatch[1].replace(/\D/g, '').slice(0, 9);
 
     // filler large (n'importe quel caractere, y compris "n°", tirets, etc.)
@@ -133,7 +148,9 @@ export class MentionsLegalesService {
     // faux positif dangereux en consequence (SIREN d'une tout autre societe
     // capte plus loin dans le pipeline). Lazy pour s'arreter au premier
     // groupe de 9 chiffres rencontre, pas un plus lointain sans rapport.
-    const rcsMatch = texte.match(/RCS[\s\S]{0,60}?(\d{3}[\s.]?\d{3}[\s.]?\d{3})\b/i);
+    const rcsMatch = texte.match(
+      /RCS[\s\S]{0,60}?(\d{3}[\s.]?\d{3}[\s.]?\d{3})\b/i,
+    );
     if (rcsMatch) return rcsMatch[1].replace(/\D/g, '');
 
     return null;

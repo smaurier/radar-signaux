@@ -4,7 +4,12 @@ import { NavigateurService } from '../navigateur.service';
 import { RobotsService } from '../robots.service';
 
 // ordre de priorite pour trier les violations : critique d'abord
-const POIDS_IMPACT: Record<string, number> = { critical: 4, serious: 3, moderate: 2, minor: 1 };
+const POIDS_IMPACT: Record<string, number> = {
+  critical: 4,
+  serious: 3,
+  moderate: 2,
+  minor: 1,
+};
 
 export interface ViolationAxe {
   id: string;
@@ -51,13 +56,22 @@ export class ScanService {
     const url = `https://${domaine}`;
 
     if (!(await this.robots.estAutorise(url))) {
-      return { url, totalViolations: 0, topViolations: [], erreur: 'robots.txt interdit ce scan' };
+      return {
+        url,
+        totalViolations: 0,
+        topViolations: [],
+        erreur: 'robots.txt interdit ce scan',
+      };
     }
 
     const resultat = await this.navigateur.avecPage(url, async (page) => {
       const analyse = await new AxeBuilder({ page }).analyze();
       const violations = [...analyse.violations]
-        .sort((a, b) => (POIDS_IMPACT[b.impact ?? ''] ?? 0) - (POIDS_IMPACT[a.impact ?? ''] ?? 0))
+        .sort(
+          (a, b) =>
+            (POIDS_IMPACT[b.impact ?? ''] ?? 0) -
+            (POIDS_IMPACT[a.impact ?? ''] ?? 0),
+        )
         .slice(0, 5)
         .map((v) => ({
           id: v.id,
@@ -67,14 +81,24 @@ export class ScanService {
           urlAide: v.helpUrl,
           nombreOccurrences: v.nodes.length,
         }));
-      return { totalViolations: analyse.violations.length, topViolations: violations };
+      return {
+        totalViolations: analyse.violations.length,
+        topViolations: violations,
+      };
     });
 
     if (!resultat) {
-      return { url, totalViolations: 0, topViolations: [], erreur: 'scan impossible (page inaccessible)' };
+      return {
+        url,
+        totalViolations: 0,
+        topViolations: [],
+        erreur: 'scan impossible (page inaccessible)',
+      };
     }
 
-    this.logger.log(`Scan axe ${domaine} : ${resultat.totalViolations} violation(s) detectee(s).`);
+    this.logger.log(
+      `Scan axe ${domaine} : ${resultat.totalViolations} violation(s) detectee(s).`,
+    );
     return { url, ...resultat, erreur: null };
   }
 }

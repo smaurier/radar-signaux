@@ -75,7 +75,9 @@ export class A11yStorageService implements OnModuleDestroy {
       .prepare(`PRAGMA table_info(a11y_prospects)`)
       .all() as { name: string }[];
     if (!colonnes.some((c) => c.name === 'notifie_email')) {
-      this.db.exec(`ALTER TABLE a11y_prospects ADD COLUMN notifie_email INTEGER NOT NULL DEFAULT 0`);
+      this.db.exec(
+        `ALTER TABLE a11y_prospects ADD COLUMN notifie_email INTEGER NOT NULL DEFAULT 0`,
+      );
     }
   }
 
@@ -124,7 +126,8 @@ export class A11yStorageService implements OnModuleDestroy {
         ca: prospect.ca ?? null,
         anneeCa: prospect.anneeCa ?? null,
         coherentAvecDomaine:
-          prospect.coherentAvecDomaine === null || prospect.coherentAvecDomaine === undefined
+          prospect.coherentAvecDomaine === null ||
+          prospect.coherentAvecDomaine === undefined
             ? null
             : prospect.coherentAvecDomaine
               ? 1

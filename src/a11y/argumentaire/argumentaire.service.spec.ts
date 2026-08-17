@@ -23,7 +23,10 @@ describe('ArgumentaireService', () => {
   };
 
   it('regime EAA code conso pour un CA sous 250M€', () => {
-    const resultat = service.genererArgumentaire({ ...prospectDeBase, ca: 133_702_922 });
+    const resultat = service.genererArgumentaire({
+      ...prospectDeBase,
+      ca: 133_702_922,
+    });
     const paragrapheRegime = resultat.texte.split('\n\n')[0];
     expect(resultat.regime).toBe('eaa_code_conso');
     // le paragraphe de regime lui-meme doit citer DGCCRF comme autorite,
@@ -34,25 +37,37 @@ describe('ArgumentaireService', () => {
   });
 
   it('bascule vers art.47/Arcom au-dessus de 250M€ (jamais un texte EAA errone)', () => {
-    const resultat = service.genererArgumentaire({ ...prospectDeBase, ca: 300_000_000 });
+    const resultat = service.genererArgumentaire({
+      ...prospectDeBase,
+      ca: 300_000_000,
+    });
     expect(resultat.regime).toBe('art47_arcom');
     expect(resultat.texte).toContain('Arcom');
     expect(resultat.texte).toContain('A VERIFIER');
   });
 
   it('pile au seuil (250M€) bascule deja vers art.47 (>=)', () => {
-    const resultat = service.genererArgumentaire({ ...prospectDeBase, ca: 250_000_000 });
+    const resultat = service.genererArgumentaire({
+      ...prospectDeBase,
+      ca: 250_000_000,
+    });
     expect(resultat.regime).toBe('art47_arcom');
   });
 
   it('CA inconnu -> regime indetermine, avertissement explicite', () => {
-    const resultat = service.genererArgumentaire({ ...prospectDeBase, ca: null });
+    const resultat = service.genererArgumentaire({
+      ...prospectDeBase,
+      ca: null,
+    });
     expect(resultat.regime).toBe('indetermine');
     expect(resultat.texte).toContain('CA inconnu');
   });
 
   it('ne presente jamais les montants art.47 (25000€/50000€) comme LA sanction pour un prospect EAA', () => {
-    const resultat = service.genererArgumentaire({ ...prospectDeBase, ca: 5_000_000 });
+    const resultat = service.genererArgumentaire({
+      ...prospectDeBase,
+      ca: 5_000_000,
+    });
     const paragrapheRegime = resultat.texte.split('\n\n')[0];
     // ces montants n'apparaissent legitimement que dans le rappel de fin
     // qui dit explicitement de ne pas les citer -- jamais dans le

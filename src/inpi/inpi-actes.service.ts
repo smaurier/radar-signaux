@@ -64,7 +64,9 @@ export class InpiActesService {
     try {
       token = await this.auth.getToken();
     } catch (err) {
-      this.logger.error(`Lecture actes : login en echec, annule (${(err as Error).message})`);
+      this.logger.error(
+        `Lecture actes : login en echec, annule (${(err as Error).message})`,
+      );
       return 0;
     }
 
@@ -92,16 +94,22 @@ export class InpiActesService {
           acteId: acte.id,
         });
         if (parse.erreur) {
-          this.logger.warn(`Acte ${acte.id} (SIREN ${signal.siren}) : ${parse.erreur}`);
+          this.logger.warn(
+            `Acte ${acte.id} (SIREN ${signal.siren}) : ${parse.erreur}`,
+          );
         }
         traites++;
       } catch (err) {
-        this.logger.warn(`Lecture acte SIREN ${signal.siren} en echec, ignore (${(err as Error).message})`);
+        this.logger.warn(
+          `Lecture acte SIREN ${signal.siren} en echec, ignore (${(err as Error).message})`,
+        );
       }
       await this.attendre(300);
     }
 
-    this.logger.log(`Lecture actes : ${traites}/${candidats.length} signal(aux) traite(s).`);
+    this.logger.log(
+      `Lecture actes : ${traites}/${candidats.length} signal(aux) traite(s).`,
+    );
     return traites;
   }
 
@@ -112,22 +120,35 @@ export class InpiActesService {
    * finement (rate limit ? reset reseau ?), mais un retry simple recupere
    * une bonne part de ces echecs sans complexifier.
    */
-  private async fetchAvecRetry(url: string, options: RequestInit): Promise<Response> {
+  private async fetchAvecRetry(
+    url: string,
+    options: RequestInit,
+  ): Promise<Response> {
     try {
       return await fetch(url, options);
     } catch (err) {
-      this.logger.debug(`Requete en echec, nouvel essai dans 500ms (${(err as Error).message})`);
+      this.logger.debug(
+        `Requete en echec, nouvel essai dans 500ms (${(err as Error).message})`,
+      );
       await this.attendre(500);
       return fetch(url, options);
     }
   }
 
-  private async trouverActePertinent(siren: string, token: string): Promise<InpiActe | null> {
-    const response = await this.fetchAvecRetry(`${INPI_BASE_URL}/companies/${siren}/attachments`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+  private async trouverActePertinent(
+    siren: string,
+    token: string,
+  ): Promise<InpiActe | null> {
+    const response = await this.fetchAvecRetry(
+      `${INPI_BASE_URL}/companies/${siren}/attachments`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
     if (!response.ok) {
-      throw new Error(`Liste des actes en echec (${response.status} ${response.statusText})`);
+      throw new Error(
+        `Liste des actes en echec (${response.status} ${response.statusText})`,
+      );
     }
     const body = (await response.json()) as InpiAttachmentsResponse;
     const actes = (body.actes ?? []).filter(
@@ -137,19 +158,31 @@ export class InpiActesService {
 
     // le plus recent d'abord, priorite PJ_54 (PV d'AG) sur PJ_52 (decision du representant legal)
     actes.sort((a, b) => {
-      const dateDiff = new Date(b.dateDepot).getTime() - new Date(a.dateDepot).getTime();
+      const dateDiff =
+        new Date(b.dateDepot).getTime() - new Date(a.dateDepot).getTime();
       if (dateDiff !== 0) return dateDiff;
-      return TYPES_ACTES_PERTINENTS.indexOf(a.typeDocument!) - TYPES_ACTES_PERTINENTS.indexOf(b.typeDocument!);
+      return (
+        TYPES_ACTES_PERTINENTS.indexOf(a.typeDocument!) -
+        TYPES_ACTES_PERTINENTS.indexOf(b.typeDocument!)
+      );
     });
     return actes[0];
   }
 
-  private async telechargerEtExtraire(acteId: string, token: string): Promise<string> {
-    const response = await this.fetchAvecRetry(`${INPI_BASE_URL}/actes/${acteId}/download`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+  private async telechargerEtExtraire(
+    acteId: string,
+    token: string,
+  ): Promise<string> {
+    const response = await this.fetchAvecRetry(
+      `${INPI_BASE_URL}/actes/${acteId}/download`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
     if (!response.ok) {
-      throw new Error(`Telechargement acte en echec (${response.status} ${response.statusText})`);
+      throw new Error(
+        `Telechargement acte en echec (${response.status} ${response.statusText})`,
+      );
     }
     const buffer = Buffer.from(await response.arrayBuffer());
     const parser = new PDFParse({ data: buffer });
@@ -204,15 +237,21 @@ export class InpiActesService {
     // complete que ce qui manque encore apres le motif "porte de/a".
     if (capitalAvant === null) {
       const ancienMatch = texte.match(/au capital de\s+([\d.,\s]+?)\s*euros?/i);
-      capitalAvant = ancienMatch ? this.parseNombreFrancais(ancienMatch[1]) : null;
+      capitalAvant = ancienMatch
+        ? this.parseNombreFrancais(ancienMatch[1])
+        : null;
     }
     if (capitalApres === null) {
       // "s'eleve desormais a Y euros" (apostrophe typographique possible),
       // sinon "fixe a la somme de Y euros" (autre formulation courante).
       const nouveauMatch =
-        texte.match(/s['’]?[ée]l[èe]ve d[ée]sormais [àa]\s+([\d.,\s]+?)\s*euros?/i) ??
+        texte.match(
+          /s['’]?[ée]l[èe]ve d[ée]sormais [àa]\s+([\d.,\s]+?)\s*euros?/i,
+        ) ??
         texte.match(/fix[ée]e?\s+[àa]\s+la somme de\s+([\d.,\s]+?)\s*euros?/i);
-      capitalApres = nouveauMatch ? this.parseNombreFrancais(nouveauMatch[1]) : null;
+      capitalApres = nouveauMatch
+        ? this.parseNombreFrancais(nouveauMatch[1])
+        : null;
     }
 
     const erreur =
@@ -225,7 +264,9 @@ export class InpiActesService {
 
   /** "39.026,31656" (format FR : point = millier, virgule = decimale) -> 39026.31656 */
   private parseNombreFrancais(brut: string): number | null {
-    const nombre = parseFloat(brut.replace(/\s/g, '').replace(/\./g, '').replace(',', '.'));
+    const nombre = parseFloat(
+      brut.replace(/\s/g, '').replace(/\./g, '').replace(',', '.'),
+    );
     return Number.isNaN(nombre) ? null : nombre;
   }
 

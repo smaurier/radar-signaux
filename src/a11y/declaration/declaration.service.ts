@@ -18,7 +18,13 @@ const CHEMINS_USUELS = [
  *   avec 'absente' (meme principe que pour l'extraction SIREN).
  * 'indetermine' : aucune page accessible, pas de blocage explicite non plus.
  */
-export type StatutDeclaration = 'conforme' | 'partiel' | 'non_conforme' | 'absente' | 'bloque' | 'indetermine';
+export type StatutDeclaration =
+  | 'conforme'
+  | 'partiel'
+  | 'non_conforme'
+  | 'absente'
+  | 'bloque'
+  | 'indetermine';
 
 export interface ResultatDeclaration {
   statut: StatutDeclaration;
@@ -76,7 +82,8 @@ export class DeclarationService {
         if (page.html) {
           unePageLue = true;
           const statutPage = this.chercherDeclaration(page.html);
-          if (statutPage) return { statut: statutPage, sourceUrl: lienDeclaration };
+          if (statutPage)
+            return { statut: statutPage, sourceUrl: lienDeclaration };
         }
       }
     }
@@ -118,7 +125,8 @@ export class DeclarationService {
       }
     }
 
-    const regexTexte = /<a[^>]+href=["']([^"']+)["'][^>]*>([^<]*accessibilit.[^<]*)<\/a>/i;
+    const regexTexte =
+      /<a[^>]+href=["']([^"']+)["'][^>]*>([^<]*accessibilit.[^<]*)<\/a>/i;
     const match = html.match(regexTexte);
     if (!match) return null;
     try {
@@ -160,7 +168,10 @@ export class DeclarationService {
       /accessibilit.\s*:?\s*(totalement|partiellement|non)\s*conforme/i,
     );
     const match2 = texte.match(
-      new RegExp(`(totalement|partiellement|non)\\s+conforme\\s+${preposition}\\s+(?:le\\s+)?${referentiel}`, 'i'),
+      new RegExp(
+        `(totalement|partiellement|non)\\s+conforme\\s+${preposition}\\s+(?:le\\s+)?${referentiel}`,
+        'i',
+      ),
     );
     const match = match1 ?? match2;
     if (match) {
@@ -171,15 +182,19 @@ export class DeclarationService {
     }
 
     const match3 = texte.match(
-      new RegExp(`en\\s+conformit[ée]\\s+(totale|partielle)\\s+${preposition}\\s+(?:le\\s+)?${referentiel}`, 'i'),
+      new RegExp(
+        `en\\s+conformit[ée]\\s+(totale|partielle)\\s+${preposition}\\s+(?:le\\s+)?${referentiel}`,
+        'i',
+      ),
     );
     if (match3) {
       return match3[1].toLowerCase() === 'totale' ? 'conforme' : 'partiel';
     }
 
-    const match4 = new RegExp(`n['’]est pas conforme\\s+${preposition}\\s+(?:le\\s+)?${referentiel}`, 'i').test(
-      texte,
-    );
+    const match4 = new RegExp(
+      `n['’]est pas conforme\\s+${preposition}\\s+(?:le\\s+)?${referentiel}`,
+      'i',
+    ).test(texte);
     if (match4) return 'non_conforme';
 
     return null;

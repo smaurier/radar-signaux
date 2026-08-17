@@ -36,7 +36,9 @@ export class DomainesService {
       }
     }
 
-    this.logger.log(`CrUX ${mois} : ${domaines.length} domaine(s) FR avec rang <= ${limite}.`);
+    this.logger.log(
+      `CrUX ${mois} : ${domaines.length} domaine(s) FR avec rang <= ${limite}.`,
+    );
     return domaines;
   }
 
@@ -45,7 +47,9 @@ export class DomainesService {
    * generalement ~1 mois de retard de publication, le mois courant n'existe
    * souvent pas encore (constate en direct le 11/08 : dernier dispo = 07/2026).
    */
-  private async telechargerDernierDisponible(maxReculMois = 3): Promise<{ csv: string; mois: string }> {
+  private async telechargerDernierDisponible(
+    maxReculMois = 3,
+  ): Promise<{ csv: string; mois: string }> {
     const d = new Date();
     for (let i = 0; i <= maxReculMois; i++) {
       const essai = new Date(d.getFullYear(), d.getMonth() - i, 1);
@@ -57,6 +61,8 @@ export class DomainesService {
         return { csv: gunzipSync(gz).toString('utf-8'), mois };
       }
     }
-    throw new Error(`Aucun fichier CrUX disponible sur les ${maxReculMois + 1} derniers mois.`);
+    throw new Error(
+      `Aucun fichier CrUX disponible sur les ${maxReculMois + 1} derniers mois.`,
+    );
   }
 }
