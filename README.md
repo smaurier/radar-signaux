@@ -39,6 +39,9 @@ doivent jamais devenir publics.
 NestJS + TypeScript, SQLite local (`better-sqlite3`) pour la déduplication entre les runs,
 `@nestjs/schedule` pour le cron. Zéro dépendance payante au MVP.
 
+Vue d'ensemble du code (modules, schémas SQLite, flux d'exécution, décisions
+d'archi) : [`docs/architecture.md`](docs/architecture.md).
+
 ## Tests
 
 ```bash
@@ -313,8 +316,8 @@ de faisabilité du 01/08).
 
 Expose le radar à un client MCP (ex. Claude Code) sans exposer de service réseau : le
 process est lancé à la demande par le client, lit directement le SQLite local en lecture
-seule. Le radar reste une app autonome (tourne même sans MCP) ; Synapse (ou tout autre
-client) n'est qu'un lecteur de plus.
+seule. Le radar reste une app autonome (tourne même sans MCP) ; un client MCP n'est
+qu'un lecteur de plus.
 
 ```bash
 npm run mcp   # lance le serveur en stdio (attend un client MCP sur stdin/stdout)
@@ -348,6 +351,19 @@ Configuration côté client (ex. `.mcp.json`, chemins absolus — jamais commit�
 client à la demande, pas de serveur permanent à sécuriser. À reconsidérer seulement si un
 client doit un jour appeler le radar depuis autre chose qu'une session locale (ex.
 routine cloud) — pas le cas aujourd'hui.
+
+## Suite envisagée
+
+Cadré, pas démarré côté code — à attaquer après l'examen RGAA du 23/10/2026 (priorité
+actuelle) :
+
+- **Dashboard V2** — interface web de consultation par-dessus le SQLite (remplace le
+  mail volatile comme mode de consultation principal), recheck a11y à la demande sur
+  une entreprise donnée, toggle par mode (BODACC seul / a11y seul / tout).
+- **Module « acquisition commerciale »** — enrichissement contact (dirigeant/DPO/DSI
+  selon taille), template email premier contact généré depuis les vraies violations
+  axe-core + la citation de la déclaration RGAA du prospect, mini-CRM (table
+  `contacts` à ajouter), séquence de relance J+7/J+21/J+45 RGPD-friendly.
 
 ## Étude de faisabilité
 

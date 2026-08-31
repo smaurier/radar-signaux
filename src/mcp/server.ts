@@ -10,19 +10,18 @@ import { ArgumentaireService } from '../a11y/argumentaire/argumentaire.service';
 /**
  * Serveur MCP radar-signaux, en LECTURE SEULE (mode Dev + mode a11y).
  *
- * Decision actee le 01/08/2026 (memory/project_radar_signaux.md) : le
- * radar reste une app autonome (sa BDD, son cron, ses notifs -- il tourne
- * meme si Synapse n'existe pas), ce serveur MCP est juste une fenetre de
- * lecture dessus. Synapse est un simple client qui interroge a la
+ * Le radar reste une app autonome (sa BDD, son cron, ses notifs -- il
+ * tourne meme sans aucun client MCP), ce serveur est juste une fenetre
+ * de lecture dessus. Un client MCP (Claude Code ou autre) interroge a la
  * demande, il ne connait rien de la structure interne du radar au-dela
  * de ces 4 tools.
  *
  * Transport stdio (pas HTTP+token) : process local lance a la demande
- * par le client MCP (ex. Claude Code), pas de serveur permanent a
- * exposer, pas d'authentification necessaire (controle par l'OS, comme
- * n'importe quel process local). A reconsiderer seulement si Synapse a
- * besoin d'appeler le radar depuis autre chose qu'une session locale
- * (ex. routine cloud) -- pas le cas aujourd'hui.
+ * par le client MCP, pas de serveur permanent a exposer, pas
+ * d'authentification necessaire (controle par l'OS, comme n'importe
+ * quel process local). A reconsiderer seulement si le radar doit etre
+ * interroge depuis autre chose qu'une session locale (ex. routine
+ * cloud) -- pas le cas aujourd'hui.
  *
  * Volontairement decouple du reste de l'app NestJS (pas de DI, pas
  * d'import du module HTTP) : ce process tourne independamment, lit
