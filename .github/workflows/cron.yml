@@ -10,6 +10,12 @@ on:
       timezone: Europe/Paris
   workflow_dispatch: {} # declenchement manuel pour tester sans attendre le planning
 
+# Necessaire pour que le job puisse pousser le journal de run dans CE depot
+# (le jeton par defaut est en lecture seule des que des permissions sont
+# declarees quelque part dans le workflow).
+permissions:
+  contents: write
+
 jobs:
   run:
     runs-on: ubuntu-latest
@@ -72,4 +78,34 @@ jobs:
           git config user.email "radar-signaux-bot@users.noreply.github.com"
           git add radar.sqlite
           git diff --cached --quiet || git commit -m "chore: mise a jour donnees $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push
+
+      # Pousse le journal du run dans CE depot. Deux raisons, la seconde est la
+      # plus importante :
+      #
+      #  1. Trace durable de ce que le radar a sorti. Le log de ce run finira
+      #     par etre efface par GitHub, le journal non.
+      #  2. BATTEMENT DE COEUR. GitHub desactive un workflow planifie apres 60
+      #     jours d'inactivite du DEPOT, et un run planifie ne compte pas comme
+      #     une activite. C'est exactement ce qui est arrive : derniere activite
+      #     visible le 16/08/2026, cron coupe le 16/10 (61 jours), muet pendant
+      #     18 jours sans que personne le voie. Le cron ne poussait que dans
+      #     radar-signaux-data, jamais ici. Un commit par jour ici remet le
+      #     compteur a zero tous les jours.
+      #
+      # [skip ci] : ce commit n'a pas besoin de relancer la CI. Il compte quand
+      # meme comme une activite du depot, qui est le seul point qui importe.
+      - name: Pousser le journal du run (trace durable + anti-desactivation)
+        if: always()
+        run: |
+          git config user.name "radar-signaux-bot"
+          git config user.email "radar-signaux-bot@users.noreply.github.com"
+          # Le dossier peut manquer si le run a casse avant d'ecrire son
+          # journal : on sort proprement plutot que de faire echouer l'etape
+          # sur un pathspec introuvable.
+          [ -d journal ] || { echo "aucun journal ecrit par ce run"; exit 0; }
+          git add journal
+          git diff --cached --quiet && echo "aucun journal a pousser" && exit 0
+          git commit -m "chore(journal): run du $(date -u +%Y-%m-%dT%H:%M:%SZ) [skip ci]"
+          git pull --rebase --quiet
           git push
