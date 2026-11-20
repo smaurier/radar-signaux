@@ -72,9 +72,9 @@ server.registerTool(
 server.registerTool(
   'get_leads',
   {
-    title: 'Prospects a11y qualifies (mode Freelance)',
+    title: 'Prospects a11y qualifies',
     description:
-      'Liste les prospects qualifies pour la prospection Nuada (>10 salaries, >2M€ CA, declaration RGAA absente/non conforme/partielle). Rappel : scan axe-core = accroche technique, pas une preuve de conformite a lui seul (couverture ~30-50%).',
+      'Liste les prospects qualifies (>10 salaries, >2M€ CA, declaration RGAA absente/non conforme/partielle). Rappel : scan axe-core = accroche technique, pas une preuve de conformite a lui seul (couverture ~30-50%).',
     inputSchema: { limite: z.number().int().min(1).max(200).optional() },
   },
   ({ limite }) => {
@@ -100,7 +100,7 @@ server.registerTool(
   {
     title: 'Recherche une entreprise dans les deux modes',
     description:
-      'Cherche par nom, SIREN ou domaine dans les signaux mode Dev ET les prospects mode a11y. Utile pour verifier si une entreprise deja croisee ailleurs (ex. conseiller carriere) apparait dans le radar.',
+      'Cherche par nom, SIREN ou domaine dans les signaux mode Dev ET les prospects mode a11y. Utile pour verifier si une entreprise deja croisee ailleurs apparait dans le radar.',
     inputSchema: { requete: z.string().min(2) },
   },
   ({ requete }) => {

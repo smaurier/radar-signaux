@@ -5,7 +5,7 @@ const USER_AGENT = 'radar-signaux-bot';
 const TIMEOUT_MS = 8000;
 
 /**
- * Respect de robots.txt (mode Freelance a11y) -- TODO releve des le debut
+ * Respect de robots.txt (mode a11y) -- TODO releve des le debut
  * du module (mentions-legales.service.ts) et enfin traite le 11/08.
  * Cf fiche CNIL du 19/06/2025 sur le scraping de donnees publiques :
  * respect de robots.txt = condition favorable explicitement citee.

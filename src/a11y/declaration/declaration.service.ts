@@ -32,7 +32,7 @@ export interface ResultatDeclaration {
 }
 
 /**
- * Detection de la declaration d'accessibilite (mode Freelance a11y, coeur
+ * Detection de la declaration d'accessibilite (mode a11y, coeur
  * du MVP a11y). Format normalise RGAA/art.47 : mention obligatoire en
  * pied de page, texte "Accessibilite : totalement/partiellement/non
  * conforme", lien vers /accessibilite. Regime EAA strict (code conso,

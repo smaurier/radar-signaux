@@ -28,7 +28,7 @@ export interface ResultatScan {
 }
 
 /**
- * Scan axe-core (mode Freelance a11y, accroche technique pour la
+ * Scan axe-core (mode a11y, accroche technique pour la
  * prospection) : reserve aux prospects deja qualifies (statut 'qualifie'
  * + declaration absente/non conforme) -- couteux (5-15s/page) et surtout
  * non pertinent sur un site deja conforme ou sur un mauvais candidat.

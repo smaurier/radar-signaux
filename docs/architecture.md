@@ -21,8 +21,8 @@ Ce fichier-ci ne le duplique pas — il s'y renvoie quand pertinent.
                      ┌─────────────────┴──────────────────┐
                      │                                    │
               ┌──────▼──────┐                    ┌────────▼─────────┐
-              │  Mode Dev   │                    │ Mode Freelance   │
-              │  (levées)   │                    │  a11y (Nuada)    │
+              │  Levées de  │                    │ Accessibilité    │
+              │  fonds      │                    │  (EAA / RGAA)    │
               │             │                    │                  │
               │ 7 étapes    │                    │ 7 étapes         │
               │ 7h00→7h30   │                    │ 7h45→8h00        │
@@ -64,10 +64,10 @@ Il y en a **trois** — c'est délibéré, chacun sert un contexte différent :
 
 Chaque module est enregistré dans `src/app.module.ts`. Les 2 modes vivent
 dans des arborescences séparées (`src/bodacc/` + `src/inpi/` + `src/presse/`
-+ `src/notifications/` pour le mode Dev ; `src/a11y/` pour le mode a11y),
++ `src/notifications/` pour le mode levées ; `src/a11y/` pour le mode a11y),
 sans dépendance croisée entre eux.
 
-### Mode Dev (levées de fonds)
+### Mode levées de fonds
 
 Un module par étape du pipeline, chacun avec son `Service` (logique) et son
 `Controller` (route REST pour test manuel).
@@ -84,10 +84,10 @@ Un module par étape du pipeline, chacun avec son `Service` (logique) et son
 (voir schéma plus bas). Chaque étape ajoute ses colonnes en migration
 additive — pas de nouvelle table par étape.
 
-### Mode Freelance a11y (prospection Nuada)
+### Mode accessibilité
 
 Un seul module (`a11y`) qui regroupe 7 étapes internes. La granularité
-sous-module est plus fine que le mode Dev parce que la logique est plus
+sous-module est plus fine que le mode levées parce que la logique est plus
 riche (chaque étape a plusieurs stratégies : fetch simple → chemins usuels
 → navigateur headless).
 
@@ -99,7 +99,7 @@ riche (chaque étape a plusieurs stratégies : fetch simple → chemins usuels
 | `declaration/` | Étape 4 : détection de la déclaration RGAA | Deux formulations reconnues (normalisée + narrative « le site X est non conforme au RGAA »). Suivi de lien découvert + chemins usuels + rendu navigateur. |
 | `scan/` | Étape 5 : scan `@axe-core/playwright` | Réservé aux prospects qualifiés + non conformes/absents (coût 5-15s). Top 5 violations triées par gravité. |
 | `argumentaire/` | Base factuelle juridique (pas un email prêt) | Bascule automatique de régime selon le CA réel (EAA code conso <250 M€ vs art. 47/Arcom ≥250 M€). Reproduit sinon l'erreur du TJ de Lille 05-06/05/2026. |
-| `notifications/` | Digest email a11y | Réutilise le service Gmail SMTP du mode Dev via variables d'env communes |
+| `notifications/` | Digest email a11y | Réutilise le service Gmail SMTP du mode levées via variables d'env communes |
 | `pipeline/` | Orchestrateur : enchaîne 2→5 pour un domaine, arrêt anticipé | Ne recalcule jamais un domaine déjà en base |
 
 Trois services transverses (utilisés par plusieurs étapes du mode a11y) :
@@ -118,7 +118,7 @@ Trois services transverses (utilisés par plusieurs étapes du mode a11y) :
   simple timeout.
 
 `storage/a11y-storage.service.ts` gère la table `a11y_prospects` (voir
-schéma plus bas). Même fichier SQLite que le mode Dev, table dédiée — les
+schéma plus bas). Même fichier SQLite que le mode levées, table dédiée — les
 deux modes ne partagent aucune donnée, juste le fichier physique.
 
 ### Serveur MCP (indépendant du reste)
@@ -152,7 +152,7 @@ qu'une session locale (ex. routine cloud) — pas le cas aujourd'hui.
 Un seul fichier `data/radar.sqlite` (chemin configurable via
 `RADAR_DB_PATH`). Deux tables indépendantes, une par mode.
 
-### `bodacc_signaux` (mode Dev)
+### `bodacc_signaux` (mode levées)
 
 Clé primaire composite `(siren, date_parution)` — c'est ce qui fait la
 déduplication au run suivant (le même SIREN peut avoir plusieurs annonces
@@ -176,7 +176,7 @@ Chaque étape 2+ a sa méthode `listUnXxx()` sur `StorageService` qui remonte
 les signaux pas encore passés par elle (`WHERE inpi_qualifie = 0`, etc.).
 Idempotent : rejouer une étape ne re-traite pas ce qui l'a déjà été.
 
-### `a11y_prospects` (mode Freelance a11y)
+### `a11y_prospects` (mode accessibilité)
 
 Clé primaire `domaine` (un domaine = un prospect au plus). `ON CONFLICT DO
 UPDATE` : rejouer le pipeline sur un domaine met à jour ses données, ne
@@ -232,7 +232,7 @@ Toutes gratuites, aucune payante au MVP.
 | Source | Auth | Utilisée par |
 |---|---|---|
 | BODACC opendata (`bodacc-datadila.opendatasoft.com`) | Aucune (quota anonyme suffisant) | `bodacc` |
-| API Recherche d'entreprises (`recherche-entreprises.api.gouv.fr`) | Aucune | `entreprises` (mode Dev) + `a11y/qualification` |
+| API Recherche d'entreprises (`recherche-entreprises.api.gouv.fr`) | Aucune | `entreprises` (mode levées) + `a11y/qualification` |
 | API RNE INPI (`registre-national-entreprises.inpi.fr`) | login/mot de passe → token | `inpi.service` + `inpi-actes.service` |
 | RSS Maddyness | Aucune | `presse` |
 | RSS FrenchWeb | Aucune | `presse` |
@@ -275,17 +275,16 @@ seul process avant de coder `run-once.ts` (11/08 soir).
 
 **Pas de refactor "au cas où"** — chaque service est un vrai vertical
 (fetch + parse + write), pas de couche "repository" abstraite au-dessus de
-`StorageService`. Sylvain a explicitement délégué le radar en ship rapide
-avec l'IA (protocole 01/08) ; la passe d'apprentissage active viendra plus
-tard (post-Alstom), et se fera *sur le code livré* — refactor "propre"
-maintenant volerait cet exercice pédagogique.
+`StorageService`. La priorité était un radar qui tourne en conditions
+réelles. Une abstraction supplémentaire viendra quand un vrai besoin
+l'imposera, pas avant.
 
-**Tests de non-régression ciblés, pas de couverture générique** — 35 tests
-sur les vrais bugs rencontrés en direct pendant la construction (regex RCS
-Caroll/Salesforce, garde-fou de cohérence, bascule EAA/art.47, formulation
-narrative RGAA, extraction actes Galeon, décodage charset, etc.), pas de
-tests écrits pour la métrique. Voir le README section « Tests » pour la
-liste.
+**Tests de non-régression ciblés, pas de couverture générique** : 77 tests,
+écrits sur les vrais bugs rencontrés en direct pendant la construction
+(regex RCS trop stricte, garde-fou de cohérence, bascule EAA/art. 47,
+formulation rédigée de déclaration, extraction d'un acte INPI réel, décodage
+charset) et sur la politique de rétention, pas pour la métrique. Voir le
+README, section « Tests ».
 
 **robots.txt vérifié avant tout fetch mode a11y** — condition explicite de
 la fiche CNIL du 19/06/2025 sur le scraping de données publiques. Un
@@ -302,17 +301,13 @@ pour mauvais seuil appliqué).
 
 ## Ce qui n'est PAS ici (encore)
 
-Cadré dans la mémoire projet, pas démarré côté code :
+Cadré, pas démarré côté code :
 
-- **Dashboard V2** (cadré 24/08/2026) : interface de consultation web par
-  dessus le SQLite (remplace le mail volatile), recheck a11y à la demande,
-  toggle par mode (BODACC seul, a11y seul, tout).
-- **Module « acquisition commerciale »** (cadré 25/08/2026) : enrichissement
-  contact (dirigeant/DPO), template email violation-aware, CRM léger (table
-  `contacts` à ajouter), séquence de relance J+7/J+21/J+45. À démarrer
-  après examen RGAA du 23/10/2026 (priorité) et ouverture auto-entreprise
-  (pour facturer).
-- **Passe d'apprentissage active** : promise dans le protocole 01/08,
-  intégrée au curriculum comme checkpoint dédié (reformulation à froid +
-  reconstruction d'un module en page blanche). Jamais faite. Tant qu'elle
-  n'est pas faite, le radar ne compte pas comme acquis NestJS/TDD.
+- **Interface de consultation** : une interface web par-dessus le SQLite,
+  qui remplace le digest email comme mode de consultation principal. Liste
+  des entreprises repérées avec filtres (cas d'usage, région, secteur,
+  taille), fiche par entreprise (activité, effectif, dirigeants, capital,
+  contexte de la levée ou état de l'accessibilité), relance de l'analyse
+  d'accessibilité à la demande, activation de chaque mode séparément.
+- **Suivi** : statut et notes par entreprise (table `contacts` à ajouter),
+  export.

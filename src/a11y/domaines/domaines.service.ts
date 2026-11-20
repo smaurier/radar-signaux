@@ -5,7 +5,7 @@ const CRUX_URL_TEMPLATE =
   'https://raw.githubusercontent.com/zakird/crux-top-lists/main/data/country/fr/{mois}.csv.gz';
 
 /**
- * Source des domaines cibles (mode Freelance a11y) : classement CrUX
+ * Source des domaines cibles (mode a11y) : classement CrUX
  * (Chrome UX Report) France, publie mensuellement en clair sur GitHub
  * (zakird/crux-top-lists), gratuit, sans compte BigQuery. Format CSV :
  * `origin,rank` -- rank = palier de popularite (1000, 5000, 10000, ...).
