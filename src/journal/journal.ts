@@ -40,6 +40,7 @@ export const POLITIQUE_RETENTION: readonly ReglePurge[] = [
   // Dedup par l'URL : un flux RSS ne couvre qu'une semaine, une purge a
   // 90 jours ne peut donc jamais faire revenir un article.
   { table: 'articles_presse', colonne: 'vu_le', jours: 90 },
+  { table: 'levees_lues', colonne: 'lu_le', jours: 90 },
 ];
 
 /** Journaux gardes un an, comme "le reste" de la politique. */
@@ -114,6 +115,13 @@ export interface Journal {
   readonly purge: Readonly<Record<string, number>>;
   readonly tailles: Readonly<Record<string, number>>;
   readonly octetsBase: number;
+  /** Ajoute apres le run par l'import des lectures d'articles, s'il a tourne. */
+  readonly lecture?: Readonly<{
+    demandes: number;
+    lues: number;
+    levees: number;
+    rejets: number;
+  }>;
 }
 
 export function construireJournal(entree: {

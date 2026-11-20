@@ -62,7 +62,7 @@ un besoin d'audit et de mise en conformité.
   la France.
 - **1 160 sites e-commerce** analysés pour l'accessibilité.
 - **Un digest email** par cas d'usage après chaque passage, dès qu'il y a du nouveau.
-- **106 tests automatisés** et une intégration continue (lint, build, tests) sur chaque
+- **136 tests automatisés** et une intégration continue (lint, build, tests) sur chaque
   modification.
 
 Le dépôt ne contient que le code. Les résultats (listes d'entreprises, constats) sont
@@ -91,7 +91,7 @@ Toutes ces informations sont disponibles dans les sources que le radar interroge
   d'entrée.
 - **Le titre d'un article ne nomme pas toujours l'entreprise** (« Deux anciens de… bouclent
   un tour de table »), et les récapitulatifs de la semaine regroupent plusieurs levées dans
-  un seul article. Ces articles sont gardés : leur lecture est la prochaine étape.
+  un seul article. C'est pourquoi les articles Maddyness sont lus en entier (voir plus bas).
 - **Le scan automatique ne couvre qu'une partie de l'accessibilité** (de l'ordre de 30 à
   50 % des défauts réels : la navigation au clavier, l'ordre de lecture ou la pertinence des
   textes alternatifs restent hors de sa portée). Il sert à illustrer, jamais à calculer un
@@ -111,8 +111,15 @@ Côté presse, le point d'entrée :
 2. **Lecture du titre** : nom de l'entreprise et montant (« X lève 4,7 millions d'euros »),
    en euros ou en dollars, y compris les formes « boucle un tour de table » ou « un
    demi-milliard ». Les récapitulatifs de la semaine sont reconnus à part, et un fonds
-   d'investissement qui lève pour lui-même est écarté quand le titre le dit. Pour FrenchWeb, dont le robots.txt refuse les robots d'IA, seul le titre
-   est exploité.
+   d'investissement qui lève pour lui-même est écarté quand le titre le dit. Pour
+   FrenchWeb, dont le robots.txt refuse les robots d'IA, seul le titre est exploité.
+3. **Lecture des articles Maddyness** : chaque jour, Claude lit dans GitHub Actions les
+   articles en attente (15 au plus par passage) et rend, pour chacun, les entreprises qui
+   lèvent, le montant, et ce que l'article dit des recrutements, reformulé en une phrase.
+   Ses droits se limitent à lire ces pages et à écrire un fichier. Notre code valide ce
+   fichier contre un contrat strict avant tout enregistrement, et abandonne un article qui
+   n'a pas pu être lu en trois passages. Essai sur six articles connus : six lus, aucun
+   rejet, dont deux levées que le titre ne nommait pas et deux récapitulatifs (16 levées).
 
 Côté greffe :
 

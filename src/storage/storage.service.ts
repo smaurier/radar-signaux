@@ -3,6 +3,15 @@ import Database from 'better-sqlite3';
 import { existsSync, mkdirSync } from 'fs';
 import { dirname, join } from 'path';
 import { ArticlePresse } from '../levees/article-presse';
+import { LectureArticle, LeveeLue } from '../levees/lecture-article';
+
+const TENTATIVES_MAX = 3;
+
+/** SQLite n'a pas de booleen : `recrutement` est stocke en 0 / 1. */
+type LigneLeveeLue = Omit<LeveeLue, 'recrutement'> & {
+  articleUrl: string;
+  recrutement: number;
+};
 
 export interface BodaccSignal {
   siren: string;
@@ -146,6 +155,42 @@ export class StorageService implements OnModuleDestroy {
     addColumn('acte_capital_apres', 'acte_capital_apres REAL');
     addColumn('acte_id', 'acte_id TEXT');
     addColumn('acte_erreur', 'acte_erreur TEXT');
+
+    // Lecture des articles : la table a ete creee le 20/11 sans ces colonnes,
+    // la base de production a donc besoin de la meme migration additive.
+    this.ajouterColonnes('articles_presse', [
+      'lu_le TEXT',
+      'lecture_genre TEXT',
+      'tentatives INTEGER NOT NULL DEFAULT 0',
+    ]);
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS levees_lues (
+        article_url TEXT NOT NULL,
+        nom TEXT NOT NULL,
+        montant REAL,
+        devise TEXT,
+        recrutement INTEGER NOT NULL,
+        resume_recrutement TEXT,
+        lu_le TEXT NOT NULL DEFAULT (datetime('now')),
+        PRIMARY KEY (article_url, nom)
+      );
+    `);
+  }
+
+  /** Chaque definition commence par le nom de la colonne. */
+  private ajouterColonnes(table: string, definitions: string[]): void {
+    const existantes = new Set(
+      (
+        this.db.prepare(`PRAGMA table_info(${table})`).all() as {
+          name: string;
+        }[]
+      ).map((c) => c.name),
+    );
+    for (const definition of definitions) {
+      if (!existantes.has(definition.split(' ')[0])) {
+        this.db.exec(`ALTER TABLE ${table} ADD COLUMN ${definition}`);
+      }
+    }
   }
 
   /**
@@ -372,6 +417,69 @@ export class StorageService implements OnModuleDestroy {
     });
     transaction(articles);
     return nouveaux;
+  }
+
+  /**
+   * Articles a faire lire, et compte une tentative pour chacun : un article
+   * que la lecture n'arrive jamais a traiter est abandonne au bout de
+   * TENTATIVES_MAX passages, au lieu de consommer le quota indefiniment.
+   *
+   * ⛔ Maddyness seulement : le robots.txt de FrenchWeb refuse les robots d'IA.
+   */
+  articlesALire(limite: number): Array<{ url: string; titre: string }> {
+    const choisir = this.db.prepare(`
+      SELECT url, titre FROM articles_presse
+       WHERE source = 'maddyness' AND lu_le IS NULL AND tentatives < ?
+       ORDER BY publie_le DESC
+       LIMIT ?
+    `);
+    const compter = this.db.prepare(
+      `UPDATE articles_presse SET tentatives = tentatives + 1 WHERE url = ?`,
+    );
+
+    return this.db.transaction(() => {
+      const articles = choisir.all(TENTATIVES_MAX, limite) as Array<{
+        url: string;
+        titre: string;
+      }>;
+      for (const { url } of articles) compter.run(url);
+      return articles;
+    })();
+  }
+
+  enregistrerLecture(lecture: LectureArticle): void {
+    const marquerLu = this.db.prepare(`
+      UPDATE articles_presse SET lu_le = datetime('now'), lecture_genre = ?
+       WHERE url = ?
+    `);
+    const insererLevee = this.db.prepare(`
+      INSERT OR IGNORE INTO levees_lues
+        (article_url, nom, montant, devise, recrutement, resume_recrutement)
+      VALUES (@articleUrl, @nom, @montant, @devise, @recrutement, @resumeRecrutement)
+    `);
+
+    this.db.transaction(() => {
+      marquerLu.run(lecture.genre, lecture.url);
+      for (const levee of lecture.levees) {
+        insererLevee.run({
+          ...levee,
+          articleUrl: lecture.url,
+          recrutement: levee.recrutement ? 1 : 0,
+        });
+      }
+    })();
+  }
+
+  leveesLues(): Array<LeveeLue & { articleUrl: string }> {
+    const lignes = this.db
+      .prepare(
+        `SELECT article_url AS articleUrl, nom, montant, devise, recrutement,
+                resume_recrutement AS resumeRecrutement
+           FROM levees_lues
+          ORDER BY lu_le DESC, article_url, nom`,
+      )
+      .all() as LigneLeveeLue[];
+    return lignes.map((l) => ({ ...l, recrutement: l.recrutement === 1 }));
   }
 
   onModuleDestroy(): void {

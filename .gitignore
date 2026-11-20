@@ -28,3 +28,7 @@ npm-debug.log*
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+# Lecture des articles par Claude (CI) : fichiers de passage, jamais commites
+/a-lire.json
+/lectures.json
