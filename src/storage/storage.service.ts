@@ -447,6 +447,21 @@ export class StorageService implements OnModuleDestroy {
     })();
   }
 
+  /**
+   * Rend la tentative comptee par articlesALire quand la lecture n'a pas
+   * tourne du tout (jeton expire, quota atteint) : ce n'est pas la faute de
+   * l'article, il ne doit pas s'approcher de l'abandon pour autant.
+   */
+  annulerTentatives(urls: string[]): void {
+    const annuler = this.db.prepare(`
+      UPDATE articles_presse SET tentatives = MAX(tentatives - 1, 0)
+       WHERE url = ? AND lu_le IS NULL
+    `);
+    this.db.transaction(() => {
+      for (const url of urls) annuler.run(url);
+    })();
+  }
+
   enregistrerLecture(lecture: LectureArticle): void {
     const marquerLu = this.db.prepare(`
       UPDATE articles_presse SET lu_le = datetime('now'), lecture_genre = ?

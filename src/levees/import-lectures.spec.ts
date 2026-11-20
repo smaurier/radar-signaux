@@ -42,9 +42,10 @@ describe('preparerImport', () => {
     });
   });
 
-  it("signale l'absence du fichier de lectures : la lecture n'a pas tourne", () => {
+  it("signale l'absence du fichier de lectures et annule la tentative : la lecture n'a pas tourne, ce n'est pas la faute des articles", () => {
     expect(preparerImport(aLire, null)).toEqual({
       valides: [],
+      tentativesAAnnuler: [A],
       bilan: {
         demandes: 1,
         lues: 0,
@@ -53,6 +54,12 @@ describe('preparerImport', () => {
         fichierAbsent: true,
       },
     });
+  });
+
+  it("garde la tentative quand le fichier existe : l'article a bien ete soumis a la lecture", () => {
+    expect(
+      preparerImport(aLire, JSON.stringify([])).tentativesAAnnuler,
+    ).toEqual([]);
   });
 
   it('rejette un fichier de lectures qui ne se lit pas en JSON', () => {

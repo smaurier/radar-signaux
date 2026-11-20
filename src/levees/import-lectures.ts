@@ -19,7 +19,12 @@ const ETAPE = 'Lecture des articles (Claude)';
 export function preparerImport(
   aLire: string,
   lectures: string | null,
-): { valides: LectureArticle[]; bilan: BilanLecture } {
+): {
+  valides: LectureArticle[];
+  /** Sans fichier, la lecture n'a pas tourne : ces tentatives ne comptent pas. */
+  tentativesAAnnuler: string[];
+  bilan: BilanLecture;
+} {
   const demandes = new Set(
     (JSON.parse(aLire) as Array<{ url: string }>).map((a) => a.url),
   );
@@ -27,6 +32,7 @@ export function preparerImport(
   if (lectures === null) {
     return {
       valides: [],
+      tentativesAAnnuler: [...demandes],
       bilan: bilan(demandes.size, [], [], true),
     };
   }
@@ -37,6 +43,7 @@ export function preparerImport(
   } catch {
     return {
       valides: [],
+      tentativesAAnnuler: [],
       bilan: bilan(
         demandes.size,
         [],
@@ -47,7 +54,11 @@ export function preparerImport(
   }
 
   const { valides, rejets } = validerLectures(brut, demandes);
-  return { valides, bilan: bilan(demandes.size, valides, rejets, false) };
+  return {
+    valides,
+    tentativesAAnnuler: [],
+    bilan: bilan(demandes.size, valides, rejets, false),
+  };
 }
 
 function bilan(
