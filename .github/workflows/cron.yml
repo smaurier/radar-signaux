@@ -20,6 +20,11 @@ jobs:
   run:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      # La lecture des articles ne tourne que si le jeton de l'abonnement est
+      # pose. Les secrets ne sont pas lisibles dans un `if:` d'etape, d'ou ce
+      # drapeau calcule une fois pour le job.
+      JETON_LECTURE: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
     steps:
       - name: Checkout radar-signaux (code)
         uses: actions/checkout@v4
@@ -69,6 +74,46 @@ jobs:
           INPI_USERNAME: ${{ secrets.INPI_USERNAME }}
           INPI_PASSWORD: ${{ secrets.INPI_PASSWORD }}
         run: node dist/cron/run-once.js
+
+      # Lecture des articles Maddyness par Claude, sur l'ABONNEMENT de Sylvain
+      # (jeton `claude setup-token`, secret CLAUDE_CODE_OAUTH_TOKEN).
+      # ⛔ Ne jamais ajouter de cle API a ce job : une ANTHROPIC_API_KEY passe
+      # en priorite sur le jeton et facture en credits API.
+      #
+      # Notre code prepare la liste et valide le resultat ; Claude ne peut que
+      # lire ces articles (WebFetch borne a maddyness.com) et ecrire
+      # lectures.json. La consigne est le skill .claude/skills/lire-levees.
+      # Les trois etapes n'arretent jamais le run : la base et le journal
+      # doivent etre persistes quoi qu'il arrive.
+      - name: Lister les articles a lire
+        id: alire
+        if: env.JETON_LECTURE == 'true'
+        continue-on-error: true
+        env:
+          RADAR_DB_PATH: ${{ github.workspace }}/data/radar.sqlite
+        run: |
+          node dist/cron/levees-a-lire.js a-lire.json
+          echo "nombre=$(node -p 'require("./a-lire.json").length')" >> "$GITHUB_OUTPUT"
+
+      - name: Lire les articles (Claude, sur l'abonnement)
+        if: steps.alire.outputs.nombre != '' && steps.alire.outputs.nombre != '0'
+        continue-on-error: true
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          prompt: /lire-levees
+          claude_args: |
+            --permission-mode default
+            --max-turns 60
+            --allowedTools "Read(a-lire.json),Edit(lectures.json),WebFetch(domain:www.maddyness.com)"
+
+      - name: Enregistrer les lectures (validation stricte, bilan au journal)
+        if: always() && steps.alire.outcome == 'success'
+        continue-on-error: true
+        env:
+          RADAR_DB_PATH: ${{ github.workspace }}/data/radar.sqlite
+        run: node dist/cron/levees-importer.js a-lire.json lectures.json
 
       - name: Persister la base mise a jour dans le repo de donnees
         run: |
