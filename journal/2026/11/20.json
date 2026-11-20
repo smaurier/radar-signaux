@@ -1,48 +1,67 @@
 {
-  "run": "2026-11-20T15:13:03.824Z",
-  "declencheur": "schedule",
+  "run": "2026-11-20T21:04:00.330Z",
+  "declencheur": "workflow_dispatch",
   "etapes": [
     {
       "nom": "BODACC (detection)",
-      "dureeS": 11
+      "dureeS": 9
     },
     {
       "nom": "Enrichissement NAF",
-      "dureeS": 149
+      "dureeS": 16
     },
     {
       "nom": "Qualification INPI (capital)",
-      "dureeS": 120
+      "dureeS": 0
     },
     {
       "nom": "Confirmation presse",
-      "dureeS": 4
+      "dureeS": 3
+    },
+    {
+      "nom": "Levees presse (collecte)",
+      "dureeS": 3
     },
     {
       "nom": "Lecture actes INPI (sens/montant)",
-      "dureeS": 151
+      "dureeS": 199
     },
     {
       "nom": "Digest email mode Dev",
-      "dureeS": 1
+      "dureeS": 0
     },
     {
       "nom": "Pipeline a11y (lot CrUX)",
-      "dureeS": 157
+      "dureeS": 58
     },
     {
       "nom": "Digest email mode a11y",
-      "dureeS": 1
+      "dureeS": 0
     }
   ],
-  "echecs": [],
+  "echecs": [
+    {
+      "etape": "Lecture des articles (Claude)",
+      "message": "aucun fichier de lectures alors que des articles étaient à lire : jeton absent ou expiré, quota de l'abonnement atteint, ou lecture en échec"
+    }
+  ],
   "purge": {
     "bodacc_signaux": 0,
-    "a11y_prospects": 0
+    "a11y_prospects": 0,
+    "articles_presse": 0,
+    "levees_lues": 0
   },
   "tailles": {
     "bodacc_signaux": 12748,
-    "a11y_prospects": 1175
+    "a11y_prospects": 1190,
+    "articles_presse": 40,
+    "levees_lues": 0
   },
-  "octetsBase": 4706304
+  "octetsBase": 4706304,
+  "lecture": {
+    "demandes": 10,
+    "lues": 0,
+    "levees": 0,
+    "rejets": 0
+  }
 }
