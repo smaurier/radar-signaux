@@ -1,14 +1,14 @@
 {
-  "run": "2026-11-20T21:04:00.330Z",
+  "run": "2026-11-20T21:13:50.409Z",
   "declencheur": "workflow_dispatch",
   "etapes": [
     {
       "nom": "BODACC (detection)",
-      "dureeS": 9
+      "dureeS": 8
     },
     {
       "nom": "Enrichissement NAF",
-      "dureeS": 16
+      "dureeS": 0
     },
     {
       "nom": "Qualification INPI (capital)",
@@ -16,15 +16,15 @@
     },
     {
       "nom": "Confirmation presse",
-      "dureeS": 3
+      "dureeS": 2
     },
     {
       "nom": "Levees presse (collecte)",
-      "dureeS": 3
+      "dureeS": 1
     },
     {
       "nom": "Lecture actes INPI (sens/montant)",
-      "dureeS": 199
+      "dureeS": 171
     },
     {
       "nom": "Digest email mode Dev",
@@ -32,11 +32,11 @@
     },
     {
       "nom": "Pipeline a11y (lot CrUX)",
-      "dureeS": 58
+      "dureeS": 60
     },
     {
       "nom": "Digest email mode a11y",
-      "dureeS": 0
+      "dureeS": 1
     }
   ],
   "echecs": [
@@ -53,7 +53,7 @@
   },
   "tailles": {
     "bodacc_signaux": 12748,
-    "a11y_prospects": 1190,
+    "a11y_prospects": 1205,
     "articles_presse": 40,
     "levees_lues": 0
   },

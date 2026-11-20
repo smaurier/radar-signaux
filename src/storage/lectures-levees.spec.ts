@@ -80,6 +80,19 @@ describe('StorageService, lecture des articles de levee', () => {
 
       expect(storage.articlesALire(10)).toEqual([]);
     });
+
+    it("ne compte pas une tentative quand la lecture n'a pas tourne du tout (jeton, quota) : ce n'est pas la faute de l'article", () => {
+      storage.enregistrerArticles([article('https://m.fr/a')]);
+
+      for (let passage = 0; passage < 5; passage++) {
+        storage.articlesALire(10);
+        storage.annulerTentatives(['https://m.fr/a']);
+      }
+
+      expect(storage.articlesALire(10)).toEqual([
+        { url: 'https://m.fr/a', titre: 'Titre de https://m.fr/a' },
+      ]);
+    });
   });
 
   describe('enregistrerLecture', () => {

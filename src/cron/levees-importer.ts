@@ -15,7 +15,7 @@ import { StorageService } from '../storage/storage.service';
 const [aLire = 'a-lire.json', lectures = 'lectures.json'] =
   process.argv.slice(2);
 
-const { valides, bilan } = preparerImport(
+const { valides, tentativesAAnnuler, bilan } = preparerImport(
   readFileSync(aLire, 'utf8'),
   existsSync(lectures) ? readFileSync(lectures, 'utf8') : null,
 );
@@ -23,6 +23,7 @@ const { valides, bilan } = preparerImport(
 const storage = new StorageService();
 try {
   for (const lecture of valides) storage.enregistrerLecture(lecture);
+  storage.annulerTentatives(tentativesAAnnuler);
 } finally {
   storage.onModuleDestroy();
 }
