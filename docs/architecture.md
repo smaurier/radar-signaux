@@ -64,7 +64,7 @@ Il y en a **trois** — c'est délibéré, chacun sert un contexte différent :
 
 Chaque module est enregistré dans `src/app.module.ts`. Les 2 modes vivent
 dans des arborescences séparées (`src/bodacc/` + `src/inpi/` + `src/presse/`
-+ `src/notifications/` pour le mode levées ; `src/a11y/` pour le mode a11y),
++ `src/levees/` + `src/notifications/` pour le mode levées ; `src/a11y/` pour le mode a11y),
 sans dépendance croisée entre eux.
 
 ### Mode levées de fonds
@@ -78,6 +78,7 @@ Un module par étape du pipeline, chacun avec son `Service` (logique) et son
 | `entreprises` | Étape 2 : enrichissement NAF via `recherche-entreprises.api.gouv.fr` | 7h05 | update |
 | `inpi` | Étapes 3 et 4 : qualification capital + lecture d'actes PDF via l'API RNE | 7h10 (capital) + 7h20 (actes) | update |
 | `presse` | Étape 5 : confirmation via RSS Maddyness + FrenchWeb | 7h15 | update |
+| `levees` | Collecte quotidienne des articles Maddyness + FrenchWeb, lecture du titre (nom, montant). Point d'entrée des levées : la presse précède le BODACC de 1 à 7 mois (test du 20/11/2026) | 7h20 | `articles_presse` (insert) |
 | `notifications` | Étape 6 : digest email Gmail SMTP | 7h30 | flag `notifie_email` |
 
 `storage/storage.service.ts` centralise l'accès à la table `bodacc_signaux`
@@ -176,6 +177,27 @@ Chaque étape 2+ a sa méthode `listUnXxx()` sur `StorageService` qui remonte
 les signaux pas encore passés par elle (`WHERE inpi_qualifie = 0`, etc.).
 Idempotent : rejouer une étape ne re-traite pas ce qui l'a déjà été.
 
+### `articles_presse` (mode levées, collecte presse)
+
+Une table à part, pas une colonne de plus sur `bodacc_signaux` : un article
+n'est pas une étape sur un signal du greffe, c'est une source en soi. Clé
+primaire `url`, `INSERT OR IGNORE` : un flux couvre plusieurs jours, le même
+article revient d'un passage à l'autre et n'est enregistré qu'une fois.
+
+| Colonnes | Contenu |
+|---|---|
+| `url`, `source`, `publie_le`, `titre`, `vu_le` | L'article tel que le flux le donne |
+| `genre` | `levee`, `recap` (plusieurs levées dans un article), ou `NULL` quand le titre ne dit rien |
+| `nom`, `montant`, `devise` | Ce que le titre dit de la levée, `NULL` sinon |
+
+Tous les articles sont gardés, pas seulement ceux dont le titre parle d'une
+levée : certains titres ne la mentionnent pas, seul l'article la révèle. La
+lecture des articles eux-mêmes est l'étape suivante. ⛔ Le robots.txt de
+FrenchWeb refuse les robots d'IA : de ses articles, seul le titre est exploité.
+
+Rétention : 90 jours (`POLITIQUE_RETENTION`), très au-delà de la semaine que
+couvrent les flux, donc une purge ne fait jamais revenir un article.
+
 ### `a11y_prospects` (mode accessibilité)
 
 Clé primaire `domaine` (un domaine = un prospect au plus). `ON CONFLICT DO
@@ -234,8 +256,8 @@ Toutes gratuites, aucune payante au MVP.
 | BODACC opendata (`bodacc-datadila.opendatasoft.com`) | Aucune (quota anonyme suffisant) | `bodacc` |
 | API Recherche d'entreprises (`recherche-entreprises.api.gouv.fr`) | Aucune | `entreprises` (mode levées) + `a11y/qualification` |
 | API RNE INPI (`registre-national-entreprises.inpi.fr`) | login/mot de passe → token | `inpi.service` + `inpi-actes.service` |
-| RSS Maddyness | Aucune | `presse` |
-| RSS FrenchWeb | Aucune | `presse` |
+| RSS Maddyness | Aucune | `presse` + `levees` |
+| RSS FrenchWeb (titres seulement, robots.txt fermé aux robots d'IA) | Aucune | `presse` + `levees` |
 | CrUX top-lists FR (`github.com/zakird/crux-top-lists`) | Aucune | `a11y/domaines` |
 | Sites e-commerce FR (mentions légales, déclaration accessibilité) | — (fetch anonyme, repli Playwright sur 403) | `a11y/mentions-legales` + `a11y/declaration` + `a11y/scan` |
 | Gmail SMTP | mot de passe d'application | `notifications` + `a11y-notifications` |
@@ -279,7 +301,7 @@ seul process avant de coder `run-once.ts` (11/08 soir).
 réelles. Une abstraction supplémentaire viendra quand un vrai besoin
 l'imposera, pas avant.
 
-**Tests de non-régression ciblés, pas de couverture générique** : 77 tests,
+**Tests de non-régression ciblés, pas de couverture générique** : 106 tests,
 écrits sur les vrais bugs rencontrés en direct pendant la construction
 (regex RCS trop stricte, garde-fou de cohérence, bascule EAA/art. 47,
 formulation rédigée de déclaration, extraction d'un acte INPI réel, décodage
