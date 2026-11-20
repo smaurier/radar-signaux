@@ -36,7 +36,7 @@ export interface ResultatSiren {
 
 /**
  * Extraction du SIREN depuis les mentions legales d'un site (mode
- * Freelance a11y). Pipeline inverse par rapport au mode Dev : ici on part
+ * a11y). Pipeline inverse par rapport au mode Dev : ici on part
  * du domaine (CrUX) pour trouver le SIREN, pas l'inverse (SIRENE n'a pas
  * les sites web -- cf etude de faisabilite du 01/08).
  *

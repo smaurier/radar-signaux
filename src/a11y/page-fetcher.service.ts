@@ -12,7 +12,7 @@ export interface ResultatFetch {
 }
 
 /**
- * fetch() partage (mode Freelance a11y) : verifie robots.txt d'abord
+ * fetch() partage (mode a11y) : verifie robots.txt d'abord
  * (jamais contourne -- cf RobotsService), puis essaie un fetch() simple
  * (rapide), repli vers un navigateur headless (Playwright) sur blocage
  * explicite uniquement (403/429/503 -- fingerprinting TLS/HTTP anti-bot,

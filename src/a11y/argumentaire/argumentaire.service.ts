@@ -36,7 +36,7 @@ export interface Argumentaire {
 }
 
 /**
- * Genere un argumentaire factuel par prospect (mode Freelance a11y) --
+ * Genere un argumentaire factuel par prospect (mode a11y) --
  * PAS un pitch commercial redige, un ensemble de faits verifiables
  * organises pour servir de base a un contact humain. Objectif explicite
  * de l'etude de faisabilite du 01/08 : "argumentaire EAA juridiquement

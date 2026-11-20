@@ -49,7 +49,7 @@ export interface ResultatQualification {
 }
 
 /**
- * Qualification CA/effectif (mode Freelance a11y) : reutilise l'API
+ * Qualification CA/effectif (mode a11y) : reutilise l'API
  * gratuite Recherche d'entreprises deja validee en mode Dev, mais pour
  * verifier le seuil du regime EAA (>10 salaries ET >2M€ CA), pas pour du
  * tagging NAF tech.
