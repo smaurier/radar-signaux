@@ -36,7 +36,7 @@ Séquence à chaque run planifié (`.github/workflows/cron.yml`) :
 5. **Build** (`npm run build`) — voir piège ci-dessous, c'est l'étape qui a cassé la
    première tentative.
 6. Exécution séquentielle de toute la chaîne (`node dist/cron/run-once.js`) : BODACC →
-   enrichissement NAF → qualification INPI → presse → lecture d'actes → digest mode Dev
+   enrichissement NAF → qualification INPI → presse → lecture d'actes → digest mode levées
    → pipeline a11y → digest a11y. Chaque étape est indépendamment tolérante à l'échec
    (une étape qui plante n'interrompt pas les suivantes).
 7. Commit + push de `radar.sqlite` mis à jour vers `radar-signaux-data`.
