@@ -189,14 +189,40 @@ article revient d'un passage à l'autre et n'est enregistré qu'une fois.
 | `url`, `source`, `publie_le`, `titre`, `vu_le` | L'article tel que le flux le donne |
 | `genre` | `levee`, `recap` (plusieurs levées dans un article), ou `NULL` quand le titre ne dit rien |
 | `nom`, `montant`, `devise` | Ce que le titre dit de la levée, `NULL` sinon |
+| `lu_le`, `lecture_genre`, `tentatives` | Lecture de l'article par Claude (Maddyness seulement) : date, `levee` / `recap` / `sans_levee`, nombre de passages qui l'ont demandée |
 
 Tous les articles sont gardés, pas seulement ceux dont le titre parle d'une
-levée : certains titres ne la mentionnent pas, seul l'article la révèle. La
-lecture des articles eux-mêmes est l'étape suivante. ⛔ Le robots.txt de
-FrenchWeb refuse les robots d'IA : de ses articles, seul le titre est exploité.
+levée : certains titres ne la mentionnent pas, seul l'article la révèle.
+⛔ Le robots.txt de FrenchWeb refuse les robots d'IA : de ses articles, seul le
+titre est exploité, jamais le texte.
 
 Rétention : 90 jours (`POLITIQUE_RETENTION`), très au-delà de la semaine que
 couvrent les flux, donc une purge ne fait jamais revenir un article.
+
+### Lecture des articles et `levees_lues`
+
+Trois étapes du workflow `cron.yml`, après `run-once`, qui n'arrêtent jamais le
+passage :
+
+1. `dist/cron/levees-a-lire.js` écrit `a-lire.json` : les articles Maddyness
+   pas encore lus, 15 au plus, et compte une tentative pour chacun (abandon
+   au bout de 3, pour ne pas consommer le quota indéfiniment).
+2. `anthropics/claude-code-action` lance le skill
+   `.claude/skills/lire-levees` sur l'abonnement de l'auteur (jeton
+   `CLAUDE_CODE_OAUTH_TOKEN`, ⛔ jamais de clé API dans ce job : elle
+   passerait en priorité et facturerait en crédits API). Outils autorisés :
+   `Read(a-lire.json)`, `Edit(lectures.json)`,
+   `WebFetch(domain:www.maddyness.com)`, rien d'autre.
+3. `dist/cron/levees-importer.js` valide `lectures.json` contre le contrat de
+   `src/levees/lecture-article.ts` (zod strict : article demandé, champs
+   connus, résumé de 200 caractères au plus pour reformuler sans recopier),
+   enregistre ce qui passe et ajoute un bilan `lecture` au journal du jour.
+   Un fichier absent alors que des articles étaient demandés y devient un
+   échec visible (jeton expiré, quota atteint).
+
+`levees_lues` : une ligne par entreprise et par article (clé
+`article_url, nom`), avec `montant`, `devise`, `recrutement` et
+`resume_recrutement`. Rétention : 90 jours, comme les articles.
 
 ### `a11y_prospects` (mode accessibilité)
 
@@ -301,7 +327,7 @@ seul process avant de coder `run-once.ts` (11/08 soir).
 réelles. Une abstraction supplémentaire viendra quand un vrai besoin
 l'imposera, pas avant.
 
-**Tests de non-régression ciblés, pas de couverture générique** : 106 tests,
+**Tests de non-régression ciblés, pas de couverture générique** : 136 tests,
 écrits sur les vrais bugs rencontrés en direct pendant la construction
 (regex RCS trop stricte, garde-fou de cohérence, bascule EAA/art. 47,
 formulation rédigée de déclaration, extraction d'un acte INPI réel, décodage
