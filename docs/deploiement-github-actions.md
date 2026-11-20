@@ -71,25 +71,31 @@ point d'entrée.
 
 | Secret | Rôle | Source |
 |---|---|---|
-| `DATA_REPO_TOKEN` | Push vers `radar-signaux-data` | PAT fine-grained, scope contents read/write sur ce seul repo — **à créer manuellement par Sylvain**, ne peut pas être généré depuis une session non interactive |
+| `DATA_REPO_SSH_KEY` | Lecture et push de `radar-signaux-data` | Moitié privée d'une clé de déploiement SSH, en lecture/écriture sur ce seul dépôt. N'expire pas (voir plus bas) |
+| `CLAUDE_CODE_OAUTH_TOKEN` | Lecture des articles par Claude, sur l'abonnement | `claude setup-token`, valable un an. ⛔ Jamais de clé API dans ce workflow : elle passerait en priorité et facturerait en crédits API |
 | `GMAIL_USER` | Digest email | déjà poussé depuis `.env` local |
 | `GMAIL_APP_PASSWORD` | Digest email (mot de passe d'application, pas le mot de passe du compte) | déjà poussé depuis `.env` local |
 | `RADAR_NOTIFY_TO` | Destinataire du digest | déjà poussé depuis `.env` local |
 | `INPI_USERNAME` / `INPI_PASSWORD` | Login API RNE (qualification capital + actes) | déjà poussé depuis `.env` local |
 
-### Créer le PAT pour `DATA_REPO_TOKEN`
+### La clé de déploiement `DATA_REPO_SSH_KEY`
 
-1. https://github.com/settings/personal-access-tokens/new
-2. **Resource owner** : `smaurier`. **Repository access** : Only select repositories →
-   `radar-signaux-data` uniquement (jamais un token tous-repos pour ça).
-3. **Permissions** → Repository permissions → **Contents : Read and write** (seule
-   permission nécessaire — pas besoin d'Issues, Actions, etc.).
-4. Expiration : au choix (90 jours minimum recommandé, à renouveler ensuite — un PAT
-   fine-grained ne peut pas être "no expiration" indéfiniment sans org).
-5. Générer, copier le token, puis :
-   ```bash
-   gh secret set DATA_REPO_TOKEN -b"<token copié>" -R smaurier/radar-signaux
-   ```
+Jusqu'au 20/11/2026, l'accès au dépôt de données passait par un PAT fine-grained
+(`DATA_REPO_TOKEN`). Son expiration a coupé tout le radar ce soir-là. Il est remplacé par
+une clé de déploiement SSH : limitée à `radar-signaux-data`, elle **n'expire pas**, et se
+crée entièrement en ligne de commande, sans qu'aucune valeur secrète ne s'affiche.
+
+Pour la recréer (clé compromise, ou dépôt recréé) :
+
+```bash
+ssh-keygen -q -t ed25519 -N "" -C "radar-signaux CI vers radar-signaux-data" -f ./cle
+gh repo deploy-key add ./cle.pub --allow-write --title "radar-signaux CI (cron quotidien)" -R smaurier/radar-signaux-data
+gh secret set DATA_REPO_SSH_KEY -R smaurier/radar-signaux < ./cle
+rm ./cle ./cle.pub
+```
+
+Puis supprimer l'ancienne clé : `gh repo deploy-key list` puis `gh repo deploy-key delete <id>`
+sur `smaurier/radar-signaux-data`.
 
 ## Limites assumées
 
@@ -100,5 +106,6 @@ point d'entrée.
 - Un repo public inactif 60 jours voit ses workflows planifiés automatiquement
   désactivés par GitHub — pas un risque concret tant que le projet est actif, mais à
   surveiller si le radar est mis en pause longtemps.
-- Le PAT `DATA_REPO_TOKEN` expire et doit être renouvelé manuellement (pas
-  d'automatisation possible pour cette étape par nature).
+- Le jeton `CLAUDE_CODE_OAUTH_TOKEN` expire un an après sa création (posé le 20/11/2026).
+  Expiré, il n'arrête pas le passage : l'étape de lecture échoue et le journal du jour le
+  signale. Il se recrée avec `claude setup-token`, par Sylvain, dans un terminal à part.

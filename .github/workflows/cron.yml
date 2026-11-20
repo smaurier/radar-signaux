@@ -33,7 +33,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: smaurier/radar-signaux-data
-          token: ${{ secrets.DATA_REPO_TOKEN }}
+          # Cle de deploiement SSH (lecture/ecriture sur CE seul depot), et non
+          # plus un PAT : le PAT expire, et son expiration a coupe le radar le
+          # 20/11/2026. Une cle de deploiement n'expire pas. Le checkout la garde
+          # pour le `git push` de l'etape "Persister la base".
+          ssh-key: ${{ secrets.DATA_REPO_SSH_KEY }}
           path: data-repo
 
       - name: Positionner la base SQLite du run precedent (si elle existe)
