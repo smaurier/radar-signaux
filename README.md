@@ -21,11 +21,15 @@ Projet personnel développé en NestJS et TypeScript. Il tourne en production to
 Une levée de fonds se traduit presque toujours par des recrutements et des projets à lancer
 vite. Tout l'enjeu est de le savoir tôt.
 
-Le radar s'appuie sur le greffe : une augmentation de capital est publiée au BODACC dès que
-l'opération est juridiquement bouclée, souvent avant tout communiqué de presse. Il capte
-aussi les levées qui ne sont jamais annoncées. Chaque signal est ensuite qualifié : secteur
-d'activité, effectif, capital, sens réel de l'opération (augmentation ou réduction), article
-de presse quand il en existe un.
+Le radar part de la presse spécialisée : chaque jour, il collecte les articles de Maddyness
+et de FrenchWeb, et lit dans leur titre le nom de l'entreprise et le montant levé. Un test
+mené le 20/11/2026 a montré que l'annonce dans la presse précède de 1 à 7 mois la publication
+de l'augmentation de capital au BODACC : la presse est donc le point d'entrée. Sur ce premier
+échantillon, ce sont les levées d'au moins 4 M€ qui débouchaient sur des recrutements.
+
+Le radar suit aussi le greffe, qui capte les augmentations de capital jamais annoncées.
+Chaque signal y est qualifié : secteur d'activité, effectif, capital, sens réel de
+l'opération (augmentation ou réduction).
 
 **À quoi ça sert** : repérer tôt les entreprises en croissance, susceptibles de renforcer
 rapidement leurs équipes techniques.
@@ -48,15 +52,17 @@ un besoin d'audit et de mise en conformité.
 
 ## Ce qui tourne aujourd'hui
 
-État au 19/11/2026 :
+État au 20/11/2026 (chiffres de collecte du 19/11) :
 
 - **Un passage automatique chaque jour** sur GitHub Actions, sans serveur à maintenir. Chaque
   passage laisse un journal (`journal/AAAA/MM/JJ.json`) : étapes, durées, échecs.
+- **Les articles de Maddyness et de FrenchWeb** collectés chaque jour, avec le nom et le
+  montant de la levée quand le titre les donne.
 - **12 470 signaux** de modification de capital collectés sur les 3 derniers mois, sur toute
   la France.
 - **1 160 sites e-commerce** analysés pour l'accessibilité.
 - **Un digest email** par cas d'usage après chaque passage, dès qu'il y a du nouveau.
-- **77 tests automatisés** et une intégration continue (lint, build, tests) sur chaque
+- **106 tests automatisés** et une intégration continue (lint, build, tests) sur chaque
   modification.
 
 Le dépôt ne contient que le code. Les résultats (listes d'entreprises, constats) sont
@@ -81,7 +87,11 @@ Toutes ces informations sont disponibles dans les sources que le radar interroge
 - **Une modification de capital n'est pas forcément une levée de fonds.** Le BODACC ne
   précise ni le sens ni le montant de l'opération. La lecture du procès-verbal de décision
   trouve le sens dans 53 % des cas, et le montant exact rarement (environ 1 %, mesuré sur
-  177 signaux réels). Le montant annoncé dans la presse est la piste suivante.
+  177 signaux réels). C'est une des raisons pour lesquelles la presse est devenue le point
+  d'entrée.
+- **Le titre d'un article ne nomme pas toujours l'entreprise** (« Deux anciens de… bouclent
+  un tour de table »), et les récapitulatifs de la semaine regroupent plusieurs levées dans
+  un seul article. Ces articles sont gardés : leur lecture est la prochaine étape.
 - **Le scan automatique ne couvre qu'une partie de l'accessibilité** (de l'ordre de 30 à
   50 % des défauts réels : la navigation au clavier, l'ordre de lecture ou la pertinence des
   textes alternatifs restent hors de sa portée). Il sert à illustrer, jamais à calculer un
@@ -93,6 +103,18 @@ Toutes ces informations sont disponibles dans les sources que le radar interroge
   pas des messages prêts à envoyer.
 
 ## Comment ça marche : levées de fonds
+
+Côté presse, le point d'entrée :
+
+1. **Collecte** : chaque jour, les flux RSS de Maddyness et de FrenchWeb. Chaque article
+   n'est enregistré qu'une fois (clé : son adresse) et gardé trois mois.
+2. **Lecture du titre** : nom de l'entreprise et montant (« X lève 4,7 millions d'euros »),
+   en euros ou en dollars, y compris les formes « boucle un tour de table » ou « un
+   demi-milliard ». Les récapitulatifs de la semaine sont reconnus à part, et un fonds
+   d'investissement qui lève pour lui-même est écarté quand le titre le dit. Pour FrenchWeb, dont le robots.txt refuse les robots d'IA, seul le titre
+   est exploité.
+
+Côté greffe :
 
 1. **Détection** : appel quotidien à l'API BODACC (gratuite, sans clé, paginée). Le radar
    retient les avis « Modifications diverses » qui mentionnent le capital, sur toute la

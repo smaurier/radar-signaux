@@ -36,6 +36,17 @@ describe('politique de retention', () => {
     });
   });
 
+  it('garde les articles de presse 3 mois, bien au-dela de la semaine que couvrent les flux', () => {
+    const parTable = Object.fromEntries(
+      POLITIQUE_RETENTION.map((r) => [r.table, r]),
+    );
+
+    expect(parTable['articles_presse']).toMatchObject({
+      colonne: 'vu_le',
+      jours: 90,
+    });
+  });
+
   it('accepte la fenetre de collecte par defaut (7 jours)', () => {
     expect(() => verifierInvariantRetention(7)).not.toThrow();
   });

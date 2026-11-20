@@ -2,6 +2,7 @@ import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import Database from 'better-sqlite3';
 import { existsSync, mkdirSync } from 'fs';
 import { dirname, join } from 'path';
+import { ArticlePresse } from '../levees/article-presse';
 
 export interface BodaccSignal {
   siren: string;
@@ -94,6 +95,18 @@ export class StorageService implements OnModuleDestroy {
         tribunal TEXT NOT NULL,
         first_seen_at TEXT NOT NULL DEFAULT (datetime('now')),
         PRIMARY KEY (siren, date_parution)
+      );
+
+      CREATE TABLE IF NOT EXISTS articles_presse (
+        url TEXT PRIMARY KEY,
+        source TEXT NOT NULL,
+        publie_le TEXT,
+        titre TEXT NOT NULL,
+        genre TEXT,
+        nom TEXT,
+        montant REAL,
+        devise TEXT,
+        vu_le TEXT NOT NULL DEFAULT (datetime('now'))
       );
     `);
 
@@ -339,6 +352,26 @@ export class StorageService implements OnModuleDestroy {
       },
     );
     transaction(signals);
+  }
+
+  /** Insere les articles inconnus (cle : l'URL) et ne rend que ceux-la. */
+  enregistrerArticles(articles: ArticlePresse[]): ArticlePresse[] {
+    const insert = this.db.prepare(`
+      INSERT OR IGNORE INTO articles_presse
+        (url, source, publie_le, titre, genre, nom, montant, devise)
+      VALUES (@url, @source, @publieLe, @titre, @genre, @nom, @montant, @devise)
+    `);
+
+    const nouveaux: ArticlePresse[] = [];
+    const transaction = this.db.transaction((items: ArticlePresse[]) => {
+      for (const item of items) {
+        if (insert.run(item).changes > 0) {
+          nouveaux.push(item);
+        }
+      }
+    });
+    transaction(articles);
+    return nouveaux;
   }
 
   onModuleDestroy(): void {

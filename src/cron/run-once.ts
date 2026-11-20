@@ -5,6 +5,7 @@ import { EntreprisesService } from '../entreprises/entreprises.service';
 import { InpiService } from '../inpi/inpi.service';
 import { InpiActesService } from '../inpi/inpi-actes.service';
 import { PresseService } from '../presse/presse.service';
+import { LeveesPresseService } from '../levees/levees-presse.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PipelineService } from '../a11y/pipeline/pipeline.service';
 import { A11yNotificationsService } from '../a11y/notifications/a11y-notifications.service';
@@ -58,6 +59,7 @@ async function main() {
     ['Enrichissement NAF', () => app.get(EntreprisesService).run()],
     ['Qualification INPI (capital)', () => app.get(InpiService).run()],
     ['Confirmation presse', () => app.get(PresseService).run()],
+    ['Levees presse (collecte)', () => app.get(LeveesPresseService).run()],
     [
       'Lecture actes INPI (sens/montant)',
       () => app.get(InpiActesService).run(),

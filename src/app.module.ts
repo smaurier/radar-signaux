@@ -8,6 +8,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { EntreprisesModule } from './entreprises/entreprises.module';
 import { InpiModule } from './inpi/inpi.module';
 import { A11yModule } from './a11y/a11y.module';
+import { LeveesModule } from './levees/levees.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { A11yModule } from './a11y/a11y.module';
     EntreprisesModule,
     InpiModule,
     PresseModule,
+    LeveesModule,
     NotificationsModule,
     A11yModule,
   ],
