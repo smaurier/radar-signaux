@@ -47,6 +47,17 @@ describe('politique de retention', () => {
     });
   });
 
+  it('garde les levees lues 3 mois, comme les articles dont elles viennent', () => {
+    const parTable = Object.fromEntries(
+      POLITIQUE_RETENTION.map((r) => [r.table, r]),
+    );
+
+    expect(parTable['levees_lues']).toMatchObject({
+      colonne: 'lu_le',
+      jours: 90,
+    });
+  });
+
   it('accepte la fenetre de collecte par defaut (7 jours)', () => {
     expect(() => verifierInvariantRetention(7)).not.toThrow();
   });
