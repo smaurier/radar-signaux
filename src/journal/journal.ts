@@ -37,6 +37,9 @@ export interface ReglePurge {
 export const POLITIQUE_RETENTION: readonly ReglePurge[] = [
   { table: 'bodacc_signaux', colonne: 'first_seen_at', jours: 90 },
   { table: 'a11y_prospects', colonne: 'traite_le', jours: 365 },
+  // Dedup par l'URL : un flux RSS ne couvre qu'une semaine, une purge a
+  // 90 jours ne peut donc jamais faire revenir un article.
+  { table: 'articles_presse', colonne: 'vu_le', jours: 90 },
 ];
 
 /** Journaux gardes un an, comme "le reste" de la politique. */
